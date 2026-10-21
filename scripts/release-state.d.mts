@@ -27,7 +27,7 @@ export interface InterruptReceipt {
 /**
  * Interrupt receipt filename
  */
-export const INTERRUPT_RECEIPT_FILENAME: 'standroidsmissal-release-interrupt-receipt.json';
+export const INTERRUPT_RECEIPT_FILENAME: 'helloword-release-interrupt-receipt.json';
 
 /**
  * Exit code when controlled interrupt occurs

@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
 const WEBDIST = resolve(ROOT, 'dist-web');
-const SLUG = 'standroidsmissal';
+const SLUG = 'helloword';
 const versionJson = JSON.parse(readFileSync(resolve(ROOT, 'version.json'), 'utf8'));
 const VERSION = versionJson.version;
 const VERSION_CODE = String(versionJson.versionCode);
@@ -146,7 +146,7 @@ if (existsSync(msiDir)) {
 }
 
 // MSIX is built by `npm run build:windows:msix` (winapp CLI, not Tauri's
-// bundler) and emitted at the repo root as standroidsmissal-v<ver>-windows-x64.msix.
+// bundler) and emitted at the repo root as helloword-v<ver>-windows-x64.msix.
 const msixPath = resolve(ROOT, `${PREFIX}-windows-x64.msix`);
 if (existsSync(msixPath)) {
   sources.push({

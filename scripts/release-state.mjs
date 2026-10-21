@@ -4,7 +4,7 @@
  * Release state management for autonomous stamped resume.
  *
  * The first invocation of `npm run build:release` stamps once, writes
- * `standroidsmissal-release-state.json`, and runs named stages. A later invocation with a matching
+ * `helloword-release-state.json`, and runs named stages. A later invocation with a matching
  * lock resumes automatically at the first incomplete stage without stamping.
  * Mismatched/corrupt locks fail closed with exact remediation.
  */
@@ -32,7 +32,7 @@ function getRoot(deps) {
  * Get lock path for current root
  */
 function getLockPath(root) {
-  return path.join(root, 'standroidsmissal-release-state.json');
+  return path.join(root, 'helloword-release-state.json');
 }
 
 /**
@@ -195,7 +195,7 @@ const IS_WINDOWS_HOST = process.platform === 'win32';
 /**
  * Interrupt receipt filename
  */
-export const INTERRUPT_RECEIPT_FILENAME = 'standroidsmissal-release-interrupt-receipt.json';
+export const INTERRUPT_RECEIPT_FILENAME = 'helloword-release-interrupt-receipt.json';
 
 /**
  * Exit code when controlled interrupt occurs
@@ -315,7 +315,7 @@ async function runCommand(name, deps, root) {
 
           // First reach: write receipt and interrupt
           if (receipt === null) {
-            const logPath = path.join(fixtureDir, 'standroidsmissal-release-stage-events.log');
+            const logPath = path.join(fixtureDir, 'helloword-release-stage-events.log');
             fs.appendFileSync(logPath, name + '\n', 'utf-8');
             writeInterruptReceipt(name, fixtureDir);
             console.log(`⏸️  Controlled interrupt at ${name} (receipt written)`);
@@ -338,7 +338,7 @@ async function runCommand(name, deps, root) {
       }
 
       // Non-target stages: log normally
-      const logPath = path.join(fixtureDir, 'standroidsmissal-release-stage-events.log');
+      const logPath = path.join(fixtureDir, 'helloword-release-stage-events.log');
       const logLine = `${name}\n`;
       fs.appendFileSync(logPath, logLine, 'utf-8');
       console.log(`🔧 [STUB] ${name}`);
@@ -346,7 +346,7 @@ async function runCommand(name, deps, root) {
     }
 
     // Normal stub logging (no interrupt requested)
-    const logPath = path.join(fixtureDir, 'standroidsmissal-release-stage-events.log');
+    const logPath = path.join(fixtureDir, 'helloword-release-stage-events.log');
     const logLine = `${name}\n`;
     fs.appendFileSync(logPath, logLine, 'utf-8');
     console.log(`🔧 [STUB] ${name}`);
@@ -467,7 +467,7 @@ export function printUsage() {
 
 Options:
   --help, -h         Show this help message and exit
-  --restart          Move existing lock to ~/outbox/standroidsmissal/ and start fresh
+  --restart          Move existing lock to ~/outbox/helloword/ and start fresh
   --clean-only       Move existing lock to outbox if it matches current state
 
 Release stages (run automatically):
@@ -482,7 +482,7 @@ Release stages (run automatically):
   symbols            Package Android native debug symbols
   collect            Collect and validate all release artifacts
 
-The state file (standroidsmissal-release-state.json) enables resume after interruption:
+The state file (helloword-release-state.json) enables resume after interruption:
 - First run: stamps version and writes lock with empty completedStages
 - Subsequent runs: resume at first incomplete stage (no stamp)
 - Mismatched/corrupt locks: fail closed with remediation instructions`);
@@ -519,7 +519,7 @@ export async function main(argv, deps = {}) {
     return 1;
   }
 
-  const outboxDir = expandHomePath('~/outbox/standroidsmissal', env.HOME);
+  const outboxDir = expandHomePath('~/outbox/helloword', env.HOME);
 
   // Handle --restart: move old lock to outbox and exit
   if (restartFlag) {
@@ -529,7 +529,7 @@ export async function main(argv, deps = {}) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const archivedPath = pathObj.join(
         outboxDir,
-        `standroidsmissal-release-state-v${lock.version}-restarted-${timestamp}.json`,
+        `helloword-release-state-v${lock.version}-restarted-${timestamp}.json`,
       );
       fsObj.renameSync(lockPath, archivedPath);
       console.log(`🔄 Moved old lock to ${archivedPath}`);
@@ -551,7 +551,7 @@ export async function main(argv, deps = {}) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const archivedPath = pathObj.join(
       outboxDir,
-      `standroidsmissal-release-state-v${lock.version}-cleaned-${timestamp}.json`,
+      `helloword-release-state-v${lock.version}-cleaned-${timestamp}.json`,
     );
 
     if (!lockMatchesCurrent(lock, root)) {
@@ -604,7 +604,7 @@ export async function main(argv, deps = {}) {
     };
 
     writeLock(newLock, lockPath);
-    console.log(`🔒 Wrote standroidsmissal-release-state.json v${newLock.version}`);
+    console.log(`🔒 Wrote helloword-release-state.json v${newLock.version}`);
     lock = newLock;
   } else {
     // Existing lock: validate match

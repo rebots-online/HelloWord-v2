@@ -46,7 +46,7 @@ val keystoreProperties = Properties().apply {
 base {
     // Every artifact filename must be self-identifying: product + stamped version.
     // Never Gradle's default "app-universal-release.*". Drives APK and AAB output names.
-    archivesName.set("standroidsmissal-v" + tauriProperties.getProperty("tauri.android.versionName", "0.0"))
+    archivesName.set("helloword-v" + tauriProperties.getProperty("tauri.android.versionName", "0.0"))
 }
 
 android {

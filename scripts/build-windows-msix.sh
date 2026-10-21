@@ -55,11 +55,11 @@ echo "=== Packaging MSIX ==="
 winapp package ./msix-stage \
   --manifest ./Package.appxmanifest \
   --cert ./devcert.pfx \
-  --output "standroidsmissal-v${VERSION}-windows-x64.msix"
+  --output "helloword-v${VERSION}-windows-x64.msix"
 
 echo ""
 echo "=== Done ==="
-ls -la "standroidsmissal-v${VERSION}-windows-x64.msix"
+ls -la "helloword-v${VERSION}-windows-x64.msix"
 echo ""
 echo "For Microsoft Store submission: upload this .msix via Partner Center."
 echo "The Store will re-sign it — the dev cert is sufficient for submission."
