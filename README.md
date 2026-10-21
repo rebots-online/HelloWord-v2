@@ -36,7 +36,7 @@ NSIS, MSI, MSIX, RPM, and Snap packages are not currently produced. Microsoft
 Store packaging requires a separate Windows-host package pass. All builds are
 **local** — CI remains dormant until explicitly activated. See
 `BUILD_INSTRUCTIONS.md` § CI/CD for the proposed self-hosted runner recipe
-(GitHub Actions and Forgejo Actions) pending runner provisioning.
+(GitHub Actions) pending runner provisioning.
 
 ## Prerequisites
 

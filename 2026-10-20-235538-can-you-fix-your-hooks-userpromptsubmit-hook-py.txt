@@ -1,0 +1,650 @@
+ ▐▛███▛█   Claude Code v2.1.305
+▝▜██████▀  glm-5.3-flash · API Usage Billing
+ ▝▝   ▝▝   ~/github/helloword-2.0
+
+
+❯ can you fix your hooks 'UserPromptSubmit hook [python3                        
+  /home/robin/.claude/hooks/inject-rules.py] timed out after 10s — output       
+  discarded. Raise the hook's "timeout" to allow more time.'                    
+  ⎿  UserPromptSubmit hook [python3 /home/robin/.claude/hooks/inject-rules.py] 
+     timed out after 10s — output discarded. Raise the hook's "timeout" to allow
+     more time.
+
+  Thought for 54s (ctrl+o to expand)
+
+● TASK LIST
+  - ⚪ helloword-2.0 (master) — agent tooling upkeep
+    - 🟠 Diagnose + fix UserPromptSubmit hook timeout (inject-rules.py >10s)
+    - 🟢 Verify settings JSON valid and hook no longer discards output
+
+  First, let me surface the file tools I need, then look at both the hook config
+  and the script itself (the phase rule says root-cause before just raising the
+  timeout — the timeout may be a symptom of the script doing something slow).
+
+  Thought for 6s (ctrl+o to expand)
+
+● Now let me look at the script and find where the hook is registered:
+
+  Thought for 34s, searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● Found the root cause — and it's more interesting than a slow regex. Let me
+  look at the hook's registration in settings.json:
+
+  Thought for 21s, read 1 file (ctrl+o to expand)
+
+● The picture is clear now. Here's what's happening — the registered timeout and
+  the script's own budget are fighting each other:
+
+  ★ Insight ─────────────────────────────────────
+  - inject-rules.py:186-191 shells out to a nested claude -p call
+    (task_directive()) on every prompt, with an internal budget of TIMEOUT_S = 
+    20s. A full CLI spin-up + Haiku round-trip routinely takes >10s.
+  - The hook is registered with "timeout": 10 — smaller than the script's own 
+    20s internal budget. The script mathematically cannot finish inside its
+    window except on a lucky fast model call, so Claude Code kills it
+    mid-subprocess and discards whatever it produced.
+  - Claude Code's default hook timeout is 10s, which is why the error names
+    exactly that number — the "timeout": 10 in settings.json just makes it
+    explicit.
+    ─────────────────────────────────────────────────
+
+  So the fix is to raise the registered timeout above the script's worst case
+  (~20s subprocess + interpreter startup). I'll set it to 60, consistent with
+  the heavier kstore hook at 180:
+
+● Update(~/.claude/settings.json)
+  ⎿  Added 1 line, removed 1 line
+      354            {
+      355              "type": "command",
+      356              "command": "python3 /home/robin/.claude/hooks/inje
+           ct-rules.py",
+      357 -            "timeout": 10                                     
+      357 +            "timeout": 60                                     
+      358            }
+      359          ]
+      360        },
+
+  Thought for 4s (ctrl+o to expand)
+
+● Now verify the settings file is still valid JSON:
+
+  Thought for 11s, ran 1 shell command (ctrl+o to expand)
+
+● Settings valid, and only the reported hook changed. One more thing — the phase
+  rule says verify by observation, so let me run the hook exactly as Claude
+  Code would (payload on stdin) and time it:
+
+  Thought for 30s, ran 1 shell command (ctrl+o to expand)
+
+● ★ Insight ─────────────────────────────────────
+  - The script burned its entire internal 20s budget and produced no output —
+    task_directive() silently swallowed a failure (except Exception: text = ""
+    at line 193) and main() exited with nothing. So the reported timeout is only
+    half the story: even un-killed, this hook currently emits nothing.
+  - This is the exact failure mode the script's own docstring warns about ("no
+    output" and "nothing to say" look identical) — just one layer down, in the
+    nested claude -p call.
+    ─────────────────────────────────────────────────
+
+  The nested claude -p call is failing or exceeding 20s. Let me observe it
+  directly instead of guessing:
+
+  Thought for 1m 11s, ran 1 shell command (ctrl+o to expand)
+
+● Two findings: the model alias resolves oddly (haiku → the operator's GLM
+  router answers glm-5.3-flash unrecognized — yet it did print "OK"), and the
+  real killer: the trivial call never exited — it hung until my 60s timeout 
+  killed it. A nested claude -p loads this machine's entire MCP stack (several
+  servers are currently dead: CONNECTION_CLOSED, ECONNREFUSED, 502), so startup
+  hangs long past any sane timeout. The nested call also re-fires
+  UserPromptSubmit hooks — including this very script — in the child session.
+
+  Let me check whether this hook has ever produced output, and test a lean
+  invocation:
+
+  Thought for 34s, searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● The evidence is conclusive on both fronts:
+
+  1. The log shows the hook has been broken since at least Oct 2 — and how:
+     those "TASK DIRECTIVE" entries are the nested session's own error text. The
+     child claude -p fired the full hook chain (including kstore's), the kstore
+     hook failed, its error message became the child's prompt, and that got
+     rewritten and logged as a "directive". Garbage in, garbage logged — and no
+     successful directive since.
+  2. The lean invocation works: --strict-mcp-config --settings 
+     '{"disableAllHooks": true}' → correct reply in 16.2s, inside the script's
+     own 20s budget.
+
+  ★ Insight ─────────────────────────────────────
+  - Raising the hook timeout alone would have made things worse: the script's
+    internal 20s cap would now complete — as a silent no-op that stalls every
+    prompt by 20s. The registered "timeout": 60 only becomes meaningful once the
+    nested call actually finishes.
+  - The recursion is subtle: claude -p fires UserPromptSubmit hooks in the child
+    session, and one of those is this very script — so each "fix everything"
+    prompt spawned a child that spawned a child, all burning 10–20s before being
+    killed.
+    ─────────────────────────────────────────────────
+
+  Per the core invariant this very script enforces, I'll back it up beside
+  itself before editing in place, then make the nested call lean:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Update(~/.claude/hooks/inject-rules.py)
+  ⎿  Added 5 lines
+      186          import subprocess
+      187          r = subprocess.run(
+      188              ["claude", "-p", "--model", MODEL,
+      189 +             "--strict-mcp-config", "--settings", '{"disableAl
+          +lHooks": true}',                                              
+      190               TWO_SHOT.format(behaviours=behaviours, request=pr
+           ompt[:1200])],
+      191              capture_output=True, text=True, timeout=TIMEOUT_S,
+      192          )
+      193 +        # Lean child session: -p otherwise loads every configu
+          +red MCP server (dead                                          
+      194 +        # ones hang startup past any timeout) and re-fires the
+          + UserPromptSubmit                                             
+      195 +        # chain — including this script, recursing. Verified 2
+          +026-10-20: lean call                                          
+      196 +        # returns in ~16s; full stack hangs past 60s.         
+      197          text = " ".join(r.stdout.split()) if r.returncode == 0
+            else ""
+      198      except Exception:
+      199          text = ""
+
+  Thought for 7s (ctrl+o to expand)
+
+● Now the end-to-end verification — run the hook exactly as Claude Code does and
+  confirm it emits a directive:
+
+  Thought for 39s, ran 1 shell command (ctrl+o to expand)
+
+● Still capped at the internal 20s budget with no output — the standalone 16.2s
+  was one sample; router variance pushed this run past 20s. The child CLI's cost
+  here is waiting (~1s CPU of 16s wall), so the honest fix within the
+  operator's design is to align the script's internal budget with the new hook
+  timeout. I'll set the internal default to 40s (still under the 60s hook
+  ceiling):
+
+● Update(~/.claude/hooks/inject-rules.py)
+  ⎿  Added 1 line, removed 1 line
+      145  
+      146  LEDGER = Path.home() / ".claude/VIOLATIONS.active.json"
+      147  MODEL = os.environ.get("RULE_REWRITE_MODEL", "haiku")
+      148 -TIMEOUT_S = int(os.environ.get("RULE_REWRITE_TIMEOUT", "20")) 
+      148 +TIMEOUT_S = int(os.environ.get("RULE_REWRITE_TIMEOUT", "40")) 
+      149  
+      150  TWO_SHOT = """Rewrite the operator's request as the task to do
+            this turn, phrased so it
+      151  routes around the listed behaviours. State the work, not the r
+           ules. Never name a
+
+  Thought for 10s, ran 1 shell command (ctrl+o to expand)
+
+● It works end-to-end now. One last check that the success path logged the
+  directive:
+
+  Thought for 13s, read 1 file (ctrl+o to expand)
+
+● Verified — first successful TASK DIRECTIVE log entry since 2026-10-02.
+
+  TASK LIST
+  - ⚪ helloword-2.0 (master) — agent tooling upkeep
+    - 🟠 Diagnose + fix UserPromptSubmit hook timeout (inject-rules.py >10s) — 
+  done
+    - 🟢 Verify settings JSON valid and hook no longer discards output — done 
+  (34.3s run, directive emitted + logged)
+
+  What was actually broken (three layers, not one)
+
+  1. Registered timeout < internal budget — the hook was pinned at "timeout": 10
+     while the script itself budgets 20s for its nested claude -p rewrite call.
+     It was killed mid-flight every time.
+  2. The nested claude -p loaded the full machine stack — every configured MCP
+     server (several currently dead: connection-closed, ECONNREFUSED, 502),
+     which hangs -p startup indefinitely (60s+ observed), and it re-fired the
+     entire UserPromptSubmit hook chain in the child — including this very
+     script, recursing.
+  3. Silent failure hid all of it — task_directive() swallows exceptions and
+     no-ops, so instead of a visible error you got a 10s stall and "output
+     discarded."
+
+  Changes
+
+  ┌─────────────────────────────────────┬────────────────────────────────────┐
+  │                File                 │               Change               │
+  ├─────────────────────────────────────┼────────────────────────────────────┤
+  │ ~/.claude/settings.json:357         │ hook timeout 10 → 60               │
+  ├─────────────────────────────────────┼────────────────────────────────────┤
+  │                                     │ nested call gets                   │
+  │ ~/.claude/hooks/inject-rules.py:189 │ --strict-mcp-config +              │
+  │                                     │ {"disableAllHooks": true}          │
+  ├─────────────────────────────────────┼────────────────────────────────────┤
+  │ ~/.claude/hooks/inject-rules.py:148 │ internal budget default 20 → 40s   │
+  │                                     │ (kept under the 60s hook ceiling)  │
+  ├─────────────────────────────────────┼────────────────────────────────────┤
+  │ inject-rules.py.bak.20261020_232612 │ backup beside the original, per    │
+  │                                     │ the script's own CORE rule         │
+  └─────────────────────────────────────┴────────────────────────────────────┘
+
+  Verified: JSON valid; hook run end-to-end produced a correct directive in
+  34.3s and logged it. The settings change takes effect from the next session
+  (hooks are snapshotted at startup).
+
+  ★ Insight ─────────────────────────────────────
+  - The timing evidence told the real story: ~1s of CPU in a 16–34s call means
+    the cost is waiting (CLI startup + GLM router), not computation — so no
+    amount of script-side cleverness fixes it; only removing the child's heavy
+    startup (--strict-mcp-config) and budgeting realistically does.
+  - The log confirmed the recursion concretely: Oct 2 "directives" were the
+    child session's own kstore-hook error text, rewritten as if it were the
+    operator's request.
+    ─────────────────────────────────────────────────
+
+  One trade-off to be aware of: when it succeeds, this hook now adds roughly
+  16–34s to every prompt submission (that's the rewrite feature doing a real
+  model round-trip). If that latency gets annoying, the honest options are
+  raising RULE_REWRITE_MODEL's speed, gating it to prompts that actually need
+  rewriting, or dropping the feature — your design, your call.
+
+✻ Baked for 11m 45s · done 11:30 PM
+
+❯ IT DIDNT USED TO                                                              
+  Thought for 1m 2s (ctrl+o to expand)
+
+● TASK LIST
+  - ⚪ helloword-2.0 (master) — agent tooling upkeep
+    - 🟠 Diagnose + fix UserPromptSubmit hook timeout (inject-rules.py >10s) — 
+  done
+    - 🟢 Verify settings JSON valid and hook no longer discards output — done 
+  (34.3s run, directive emitted + logged)
+    - 🟣 Establish when/why the hook became slow — operator reports it didn't 
+  used to (NEW)
+
+  You're right to push back — and per the incident rule, let me not narrate a
+  why before verifying. There's a big clue sitting in the script itself: the
+  entire old injection path still exists as _unused_legacy() — dead code,
+  renamed with a _unused_ prefix — while main() only calls the nested-LLM
+  task_directive(). And there are three timestamped backups I can diff against:
+
+  Thought for 8s, ran 2 shell commands (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ IT USED TO JUST WORK                                                          
+  REMOVE THE KSTORE HOOKS ADD BACK THE SYSTEM PROMPTV TO COMPLY ALWAYS WITH     
+  ADMIN-MANUAL AND IF OPERATOR INTGERVENETION IS REQUIRED, THEN A REPAIR MUST   
+  BE PROPOSED TO AVOID THE SAME PROBLEM EVER OCCURRING AGAIN                    
+
+  Thought for 2m 11s (ctrl+o to expand)
+
+● TASK LIST
+  - ⚪ helloword-2.0 / agent runtime — restore the hook stack that used to work
+    - 🟠 Remove kstore hooks from settings.json (backup first, files kept on 
+  disk)
+    - 🟠 Restore deterministic inject-rules.py (last-known-good backup, no LLM 
+  round-trip)
+    - 🟢 Verify: hook <1s, emits Admin-Manual compliance block, settings JSON 
+  valid
+    - 🟣 Propose structural repair so this can never recur (operator approval 
+  items)
+
+  Understood. The evidence supports you: the July/August backups are the "just
+  worked" version — 202/208 lines, stdlib-only, its own docstring says "stdlib 
+  only, no MCP, no network, no subprocess", and it produced 1023 RULES INJECTED
+  entries. Someone later rewrote it into a nested-claude -p rewriter that
+  violated the file's own design contract, and silent failure hid it.
+  Restore-to-known-good is the right call, not my band-aid.
+
+  Gathering everything needed for the removal + restore in one pass:
+
+  Read 1 file, listed 1 directory, ran 1 shell command (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ BUT ONLY REMOVE FROM ZCLAUDE .. DO NOT REMOVE FROM CCLAUDE                    
+
+  Thought for 2m 36s (ctrl+o to expand)
+
+● TASK LIST
+  - ⚪ Agent runtime — scoped hook repair
+    - 🟢 Confirm cclaude (~/.claude) keeps kstore hooks; nothing removed here
+    - 🟠 Build + test a repair tool the operator runs against the other harness 
+  (kstore strip, deterministic injector restore)
+    - 🟣 Propose Admin-Manual rule + selftest so the regression can't recur
+
+  Scope understood: kstore hooks stay in cclaude. Nothing gets removed from
+  ~/.claude — the only changes I've made there are the two timeout fixes for the
+  error you originally reported (settings timeout 10→60, lean child call), both
+  backed up. The strip/restore work targets the other harness only, which is
+  operator-use-only — so per your own rule, I deliver it as a repair you run,
+  not something I execute.
+
+  Quick topology check so the repair targets the right config home, plus proof
+  of exactly what I've touched in ~/.claude (it's a git repo):
+
+  Thought for 18s, ran 1 shell command (ctrl+o to expand)
+
+● ~/.local/bin has both launchers, but neither ~/.zclaude nor ~/.cclaude exists
+  — they must set their own config homes. The repair command needs that path,
+  and I want to show precisely my footprint (the many modified files above
+  predate this session — not mine). Checking both, without touching the operator
+  harness's data:
+
+  Thought for 28s, ran 2 shell commands (ctrl+o to expand)
+
+● Two important findings: my exact footprint is confirmed by mtimes
+  (settings.json, inject-rules.py — both my edits), but settings.json was 
+  modified again at 23:33:07, between your two messages — not by me (my turn was
+  interrupted before any write). You may have hand-edited it. Before I state
+  anything about its current state, let me look, and also get the config-dir
+  each launcher sets:
+
+  Thought for 7s, ran 1 shell command (ctrl+o to expand)
+
+● Settings state confirmed: all 8 kstore entries still present in cclaude, my
+  timeout fix intact — the 23:33 write changed nothing material. Now the
+  launchers — my filter accidentally ate the output, let me just read them:
+
+  Thought for 51s, read 2 files (ctrl+o to expand)
+
+● Topology is now clear: both launchers share ~/.claude, but the operator
+  harness layers ~/.claude/glmsettings.json on top via --settings. Whether that
+  file replaces or unions with the shared hooks decides the whole repair
+  strategy — checking both:
+
+  Thought for 1m 21s, ran 1 shell command (ctrl+o to expand)
+
+● glmsettings.json has no hooks at all — and --settings is documented as
+  additional settings. So hooks union across layers, and both harnesses read the
+  shared settings.json. That's the crux:
+
+  ★ Insight ─────────────────────────────────────
+  - Today, every hook in shared settings.json — including all 8 kstore entries —
+    fires in both harnesses. There is currently no file that can hold "kstore
+    for cclaude only": the operator layer (glmsettings.json) can only add to
+    zclaude, never subtract from the shared base.
+  - Therefore "kstore in cclaude, gone from zclaude" is structurally impossible 
+    without a restructure — the exact "operator intervention required" case:
+    cclaude needs its own --settings layer to carry what must be surgically
+    removed from the shared base.
+    ─────────────────────────────────────────────────
+
+  That's the repair I'll build: a doctor script that splits the layers (dry-run
+  by default, backup-first, nothing deleted), tested in a scratch copy, with the
+  one launcher-line edit held out for your approval. Writing it now:
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ IT HAS TO BE CHANGED TO INJECTION == INJECT AT TOP + PREVIOUS PROMPT, NOT     
+  INJECT INTO SAME PROMPT                                                       
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ then move glmsettings.json to a ~/.zclaude folder containing everything       
+  required to run and modify ~/.local/bin/zclaude to run from that config       
+  folder                                                                        
+
+  Thought for 3m 4s (ctrl+o to expand)
+
+● TASK LIST
+  - ⚪ Harness split — operator harness self-contained in ~/.zclaude, cclaude 
+  untouched
+    - 🟠 Build ~/.zclaude/: settings.json (moved glmsettings + hooks), hooks/ 
+  (deterministic injector, additionalContext envelope = inject-at-top, prompt 
+  never merged)
+    - 🟠 Rewrite ~/.local/bin/zclaude → CLAUDE_CONFIG_DIR=~/.zclaude (backup 
+  first, launcher before glmsettings rename)
+    - 🟢 Verify: zclaude -p smoke test, injector log entry, zero kstore in 
+  zclaude, cclaude bit-identical
+    - 🟣 Deliver recurrence-prevention proposal (Admin-Manual rule text — 
+  operator commits)
+
+  The two directives fit together cleanly: CLAUDE_CONFIG_DIR=~/.zclaude in the
+  launcher makes the operator harness fully self-contained (kstore gone from it
+  by construction — it never reads ~/.claude again, so cclaude needs zero
+  changes), and the restored injector emits the additionalContext JSON envelope,
+  which is exactly "inject at top as its own block + the prompt stays a
+  separate prompt" — the plain-stdout form is what was getting merged into the
+  prompt turn.
+
+  First, what goes into the new home — full glmsettings content, and
+  path-hardcode audit of the two compliance hooks I'll carry over:
+
+  Thought for 43s, searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● glmsettings.json is fully self-contained (env carries its own auth + base URL
+  — no ~/.claude credential dependency), and the two compliance hooks only read
+  shared operator content (sesh skill dir, Admin-Manual logs) — they copy over
+  byte-identical. Only the injector needs real surgery: envelope output +
+  config-dir-aware cache. Building the new home:
+
+  Thought for 3s, ran 1 shell command (ctrl+o to expand)
+
+● Now the three authored files — the deterministic injector with the envelope,
+  the timing selftest, and the new launcher:
+
+● Write(~/.zclaude/hooks/inject-rules.py)
+  ⎿  Wrote 227 lines to ~/.zclaude/hooks/inject-rules.py
+       1 #!/usr/bin/env python3
+       3 """
+       4 inject-rules.py — UserPromptSubmit hook. Situation-matched rule 
+       5 
+         aude config home:
+       7   * output uses the hookSpecificOutput/additionalContext JSON en
+       8     stdout. The injection arrives as its own context block at th
+         e top of the turn
+         tical — never
+         eplaces emitted a
+     … +286 lines (ctrl+o to expand)
+
+● Write(~/.zclaude/hooks/selftest.sh)
+  ⎿  Wrote 25 lines to ~/.zclaude/hooks/selftest.sh
+       1 #!/bin/sh
+       3 # Run after ANY change to a hook in this config home. Every User
+         PromptSubmit
+       4 # hook must answer well inside its registered 10s timeout — 2s h
+       5 # will eat the operator's prompt latency (the 2026-10-20 inciden
+         t: a nested
+         ts output was
+       7 # discarded on every prompt for three weeks).
+       8 set -u
+      10 fail=0
+     … +20 lines (ctrl+o to expand)
+
+● Write(~/.local/bin/zclaude)
+  ⎿  Added 7 lines, removed 1 line
+       8    codegraph init -i . >/dev/null 2>&1 &
+       9  fi
+      10  
+      11 -ANTHROPIC_DEFAULT_OPUS_MODEL=glm-5.3[1m] ANTHROPIC_DEFAULT_SONN
+         -ET_MODEL=glm-5.3-flash[1m] ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-5.
+         -3-flash claude --dangerously-skip-permissions --settings ~/.cla
+         -ude/glmsettings.json --model glm-5.3-flash[1m] "$@"            
+      11 +# Self-contained config home (2026-10-20): everything this harn
+         +ess needs lives in                                             
+      12 +# ~/.zclaude — settings, hooks, caches, state. It no longer rea
+         +ds ~/.claude at all,                                           
+      13 +# so changes to the other harness's configuration can never aff
+         +ect this one (and                                              
+      14 +# kstore hooks are absent here by construction, not by filterin
+         +g). The deterministic                                          
+      15 +# Admin-Manual injector is registered in ~/.zclaude/settings.js
+         +on.                                                            
+      16 +export CLAUDE_CONFIG_DIR="${HOME}/.zclaude"                    
+      17 +ANTHROPIC_DEFAULT_OPUS_MODEL=glm-5.3[1m] ANTHROPIC_DEFAULT_SONN
+         +ET_MODEL=glm-5.3-flash[1m] ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-5.
+         +3-flash claude --dangerously-skip-permissions --model glm-5.3-f
+         +lash[1m] "$@"                                                  
+
+❯ but it needs to send everything to kstore or history will diverge             
+
+❯ so we can;t get around fixing it                                              
+❯ just changin gthe wayt injection is fed to you                                
+
+  Thought for 1m 28s (ctrl+o to expand)
+
+● TASK LIST
+  - ⚪ Harness split — zclaude self-contained in ~/.zclaude; kstore history 
+  UNBROKEN everywhere
+    - 🟠 REVISED: kstore hooks go INTO ~/.zclaude too — history must not diverge
+  (operator mid-turn)
+    - 🟠 Fix kstore adapter's INJECTION feeding only (envelope: top-of-turn 
+  block, prompt separate) — no capture redesign
+    - 🟠 Verify adapter finds transcripts under CLAUDE_CONFIG_DIR (else zclaude 
+  history would diverge silently)
+    - 🟢 Finish: settings assembly, launcher chmod, glmsettings supersede, 
+  zclaude -p smoke, cclaude bit-untouched
+    - 🟣 Recurrence-prevention proposal
+
+  Understood, and this changes the plan materially — good catch before I shipped
+  it: kstore stays wired in both harnesses (removing it from zclaude would have
+  silently forked your history — exactly the "history will diverge" failure),
+  and the fix is narrowly the feeding of injections (own block at top, prompt
+  delivered untouched), not kstore's capture role.
+
+  That also surfaces a second, quieter divergence risk I must verify before
+  anything else: zclaude's transcripts will now live under ~/.zclaude/projects/
+  — if the adapter locates transcripts via a hardcoded ~/.claude, hooks alone
+  won't save the history. Checking the adapter's structure, its injection
+  emission, and how it finds transcripts:
+
+  Listed 1 directory (ctrl+o to expand)
+
+❯ no we'll have another agent implement it                                      
+
+❯ just create the new zclaude config foldfer and launcher                       
+
+  Thought for 2m 8s (ctrl+o to expand)
+
+● Scope re-cut understood: another agent implements the kstore-side fix; I
+  deliver only the config folder + launcher, and I won't touch the adapter (it's
+  read-only under releases/ anyway — the fix must ship as a new release +
+  symlink repoint, which goes in the handoff).
+
+  One observed fact worth recording before I finish: the adapter's authority
+  injection already uses the additionalContext envelope (adapter lines 127–128)
+  — the real divergence trap is transcript resolution: it looks at
+  ~/.claude/projects and ~/.claude/agent-memory* with no CLAUDE_CONFIG_DIR
+  awareness (lines 47–52), so wiring kstore into the new home before that fix
+  would capture nothing, silently. That's why I'm leaving kstore out of
+  ~/.zclaude/settings.json for the next agent, and saying so in a README inside
+  the folder.
+
+  Finishing the folder now — hooks block, exec bits, glmsettings supersede:
+
+  Thought for 6s, ran 1 shell command (ctrl+o to expand)
+
+● Now the handoff README and the verification pass — selftest timing, envelope
+  validity, and cclaude-untouched proof:
+
+● Write(~/.zclaude/README.md)
+  ⎿  Wrote 54 lines to ~/.zclaude/README.md
+       1 # ~/.zclaude — self-contained config home for the zclaude launch
+       2 
+       3 Created 2026-10-20. `~/.local/bin/zclaude` sets `CLAUDE_CONFIG_D
+       4 longer passes `--settings ~/.claude/glmsettings.json` (that file
+       5 `~/.claude/glmsettings.json.superseded-20261020_235034`). This h
+         arness reads NOTHING from
+         l live here.
+       7 
+       9 
+         etplaces/mcpServers as-is)
+     … +75 lines (ctrl+o to expand)
+
+  Thought for 10s, ran 1 shell command (ctrl+o to expand)
+
+● The envelope assertion failed only on my second check — the test prompt "test
+  injection" matches no TRIGGERS, so the injector correctly emitted core-only
+  (no "GOVERNING AUTHORITY" section). Envelope + ALWAYS block were valid.
+  Confirming the matched-branch with a matching prompt, then the end-to-end
+  smoke test:
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Both branches verified. Now the launcher end-to-end — first real run of the
+  harness from its new config home (this also proves where its transcripts land,
+  which the next agent's kstore fix depends on):
+
+  Thought for 17s, ran 1 shell command (ctrl+o to expand)
+
+● Verified end-to-end. Saving the cross-session fact (machine config, recorded
+  nowhere else), then the final report:
+
+  Thought for 11s, listed 1 directory, wrote 1 memory (ctrl+o to expand)
+
+● The memory path is retired on this machine — the gate points to KStore as the
+  sanctioned store. Persisting there instead, and re-running the (harmless)
+  listing the blocked command carried:
+
+  Thought for 8s, listed 1 directory, called kstore (ctrl+o to expand)
+
+● TASK LIST
+  - ⚪ Harness split — DONE
+    - 🟠 ~/.zclaude config folder + launcher — done
+    - 🟢 Verified: launcher smoke 4.4s/OK, transcripts in new home, injector 
+  fired in-harness, cclaude bit-untouched
+    - 🟠 kstore side — handed off to implementing agent (~/.zclaude/README.md)
+
+  Delivered
+
+  Piece: ~/.zclaude/ config home
+  State: settings.json (old glmsettings content + deterministic injector hooks),
+
+  hooks/, README.md handoff, own RULES.index.json cache
+  ────────────────────────────────────────
+  Piece: ~/.local/bin/zclaude
+  State: CLAUDE_CONFIG_DIR=~/.zclaude, no --settings; backup at
+  zclaude.bak.20261020_234751
+  ────────────────────────────────────────
+  Piece: ~/.claude/glmsettings.json
+  State: superseded-renamed in place (.superseded-20261020_235034), nothing
+  deleted
+  ────────────────────────────────────────
+  Piece: Injection feeding
+  State: additionalContext envelope — own block at top of turn, prompt delivered
+
+  byte-identical, never merged
+  ────────────────────────────────────────
+  Piece: kstore
+  State: absent from zclaude by design until the adapter fix (registering it now
+
+  would capture nothing — silent history divergence); handoff details in
+  ~/.zclaude/README.md
+  ────────────────────────────────────────
+  Piece: cclaude / ~/.claude
+  State: untouched: all 8 kstore entries intact, launcher mtime still Aug 4
+
+  Verified by running code: zclaude -p → OK in 4.4s from the new home;
+  transcripts land in ~/.zclaude/projects/ (the exact path the adapter must
+  learn); RULES INJECTED logged in-harness at 03:51:17Z; selftest all hooks
+  ≤24ms; envelope JSON valid on both core-only and matched branches.
+
+  ★ Insight ─────────────────────────────────────
+  - The 4.4s smoke run vs the old 16–34s hook latency is the whole incident in
+    one number: deterministic injection costs ~20ms; the LLM rewriter spent
+    1000× that just starting a nested CLI.
+  - Isolation via CLAUDE_CONFIG_DIR converts "shared file edited by one harness
+    breaks both" from a discipline problem into a structural impossibility —
+    which is the only kind of fix that survives.
+    ─────────────────────────────────────────────────
+
+  Repair proposal (recurrence prevention — for Admin-Manual, your commit)
+
+  ▎ Hook hygiene (all Claude-family harnesses)
+  ▎ 1. UserPromptSubmit/SessionStart hooks are stdlib-deterministic: no 
+  ▎ subprocess, no network, no nested claude. Budget <2s, enforced by the config
+  ▎ home's selftest.sh — run after every hook change.
+  ▎ 2. Injections use the hookSpecificOutput.additionalContext envelope only 
+  ▎ (own block at top; the prompt is never merged or rewritten).
+  ▎ 3. A registered timeout must exceed the hook's measured worst case; a hook 
+  ▎ that can exceed its timeout is a defect, not a tuning problem.
+  ▎ 4. Each harness owns one config home (CLAUDE_CONFIG_DIR); no hook or 
+  ▎ settings file is shared between harnesses. KStore client changes ship as new
+  ▎ releases under releases/ with the current symlink repointed — never edited 
+  ▎ in place.
+
+  The KStore note (harness-split-zclaude-config-home-20261020, byte-exact
+  verified) carries the full context to the next agent alongside
+  ~/.zclaude/README.md.
+
+✻ Cogitated for 9m 41s · done 11:53 PM

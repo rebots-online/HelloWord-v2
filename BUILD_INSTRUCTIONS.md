@@ -12,7 +12,7 @@ in `~/Admin-Manual/PROJECTS/BUILD-INSTRUCTIONS-StAndroidsMissal.md`.
 - Canonical version source: `version.txt`
 - Runtime/build mirror: `version.json`
 - Release driver: `npm run build:release`
-- Artifact directory: tracked, Forgejo-LFS-backed `dist/`
+- Artifact directory: tracked `dist/`
 
 Manual local builds are authoritative. The checked-in workflows remain dormant
 until the operator explicitly activates CI.
@@ -334,20 +334,16 @@ transcript is written contemporaneously to the PostgreSQL session archive.
 - All persisted artifacts use slug-first, fully stamped names.
 - Wrong-version or stale bundles move to `~/outbox/standroidsmissal/`; never
   delete them.
-- `dist/` is tracked. Large artifacts use Forgejo LFS only; never GitHub LFS.
+- `dist/` is tracked. Large artifacts are not committed to the public repo.
 - Commit stamped source/tooling first with a `v<version>:` prefix.
 - Make manifest `source.commit` point to that exact source commit, then obtain
   independent manifest verification.
 - Commit `dist/` separately with a `v<version>:` prefix.
-- Push Forgejo first, then the GitHub code mirror:
+- Push the `master` branch to `origin` (GitHub):
 
 ```bash
 git push origin master
-git push github master
 ```
-
-Before a large push, confirm `.lfsconfig` and `remote.github.lfsurl` both route
-LFS objects to Forgejo. GitHub receives commits and LFS pointers only.
 
 ## Store packaging gaps
 
@@ -417,8 +413,7 @@ Operator-specific access paths and credential locations are documented in
 
 ## CI/CD — proposed recipe (not yet implemented)
 
-CI/CD is **not yet active**. The forgejo/github hosting architecture is
-changing and self-hosted runners have not yet been built. The checked-in
+CI/CD is **not yet active**. Self-hosted runners have not yet been built. The checked-in
 `.github/workflows/build-all-platforms.yml` remains dormant. This section
 documents the proposed recipe and requirements so runners can be provisioned
 when the operator is ready.
@@ -428,11 +423,9 @@ when the operator is ready.
 This project requires a single Linux host with the full cross-compilation
 toolchain (Linux native + Windows cross via `cargo-xwin` + Android NDK for
 4 ABIs). GitHub-hosted runners cannot satisfy the Android production signing
-requirement (keystore must not enter the repository), and the Forgejo LFS
-architecture means GitHub-hosted runners would need LFS credentials for
-Forgejo anyway. A self-hosted runner on the operator's build host — which
-already has every toolchain provisioned — is the natural fit for both
-GitHub Actions and Forgejo Actions.
+requirement (keystore must not enter the repository). A self-hosted runner on
+the operator's build host — which already has every toolchain provisioned —
+is the natural fit for GitHub Actions.
 
 ### Runner host requirements
 
@@ -453,7 +446,6 @@ The runner host must have the complete manual-build toolchain installed:
 - **JDK 17** with `jarsigner`/`keytool`
 - **Release utilities**: `zip`, `sha256sum`, `readelf` (binutils),
   `apksigner`, `aapt2`
-- **Git LFS** configured to resolve against Forgejo (see `.lfsconfig`)
 - **Android keystore**: provisioned at the same path as the manual build
   (`src-tauri/gen/android/keystore.properties` pointing to the
   Admin-Manual-custodied keystore). Never store secrets in the repo or
@@ -519,9 +511,6 @@ jobs:
 - **Self-hosted runner registration**: register the runner via
   `actions/runner` on the build host. Ensure the runner user has access
   to the Android SDK, keystore, and Rust toolchain.
-- **LFS**: `actions/checkout` with `lfs: true` fetches LFS objects from
-  Forgejo (per `.lfsconfig`). GitHub LFS must not be used — the
-  `remote.github.lfsurl` override routes GitHub LFS pointers to Forgejo.
 - **Secrets**: store `ANDROID_HOME`, `NDK_HOME` as repository secrets.
   The keystore path is filesystem-local on the runner; do not store the
   keystore itself as a secret.
@@ -531,63 +520,8 @@ jobs:
   manual triggers. Do not trigger on every push to `master` — the
   release driver stamps a new version each run.
 - **Artifact retention**: GitHub Actions artifacts expire (default 90
-  days). The canonical artifacts are committed to `dist/` and pushed to
-  Forgejo LFS; GitHub artifact upload is supplementary only.
-
-### Proposed Forgejo Actions recipe
-
-Forgejo Actions uses a compatible workflow syntax. The same self-hosted
-runner can serve both:
-
-```yaml
-# .forgejo/workflows/release.yml (proposed — do not activate yet)
-name: release
-on:
-  push:
-    tags: ['v*']
-  workflow_dispatch:
-
-jobs:
-  build-release:
-    runs-on: docker  # or 'self-hosted' if runner is configured
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          lfs: true
-      - run: npm ci
-      - name: Coherent release
-        run: npm run build:release
-        env:
-          ANDROID_HOME: /home/runner/Android/Sdk
-          NDK_HOME: /home/runner/Android/Sdk/ndk/27.0.12077973
-      - name: Commit and push dist
-        run: |
-          git config user.name "forgejo-actions"
-          git config user.email "actions@${CI_HOST}"
-          git add dist/ version.txt version.json package.json package-lock.json
-          git commit -m "v$(cat version.txt): CI release artifacts"
-          git push origin master
-```
-
-**Key considerations for Forgejo Actions:**
-
-- **Runner registration**: Forgejo supports self-hosted runners via
-  `forgejo-runner` (container-based or bare-metal). A bare-metal runner
-  on the build host is preferred because the toolchain is already
-  provisioned and the Android keystore is filesystem-local.
-- **LFS advantage**: Forgejo is the LFS origin, so `checkout` with
-  `lfs: true` resolves natively without cross-remote configuration.
-- **Secrets**: Forgejo supports repository and organization secrets.
-  Store `ANDROID_HOME` and `NDK_HOME` as secrets. Keystore handling is
-  identical to GitHub Actions — filesystem-local on the runner.
-- **Push-back**: Forgejo Actions can push directly to the same Forgejo
-  instance. No cross-remote LFS routing is needed. After Forgejo push,
-  a separate step can mirror to GitHub (`git push github master`) with
-  LFS pointers routing to Forgejo per `.lfsconfig`.
-- **Container vs bare-metal**: if using `runs-on: docker`, the container
-  must have the full toolchain pre-baked or mount the host's SDK/Rust
-  directories. A bare-metal runner (`runs-on: self-hosted`) avoids this
-  complexity entirely.
+  days). The canonical artifacts are committed to `dist/`; GitHub artifact upload
+  is supplementary only.
 
 ### Shared requirements (both platforms)
 
@@ -597,13 +531,11 @@ jobs:
 2. **Keystore security**: the production keystore lives on the runner
    host filesystem, never in CI secrets or environment variables. The
    ignored `keystore.properties` file points to it.
-3. **LFS routing**: all LFS objects resolve to Forgejo. GitHub receives
-   LFS pointers only (see `.lfsconfig` and `remote.github.lfsurl`).
 4. **Resume on failure**: if a CI release fails mid-build, re-running
    the workflow resumes at the failed stage via `release.lock` (no
    re-stamp). For a clean restart, use `npm run build:release --restart`.
 5. **Artifact commitment**: CI should commit `dist/` artifacts to the
-   repository (Forgejo LFS-backed) rather than relying solely on
+   repository rather than relying solely on
    CI-provider artifact storage, which is ephemeral.
 6. **No simultaneous CI + manual builds**: the release driver writes
    `release.lock` to the worktree. If CI and a manual build run

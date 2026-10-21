@@ -39,13 +39,6 @@ tsconfig.tsbuildinfo
 LOGS/
 .tmp/
 
-# Forgejo-specific CI (server down as of 2026-09-04; preserved in original repo).
-.forgejo/
-
-# LFS config preserved as backup (Forgejo LFS endpoint, now inactive).
-.lfsconfig
-.lfsconfig.forgejo-backup
-
 # Machine-local caches only (regenerated per workstation — never synced).
 .remember/
 .playwright-mcp/
