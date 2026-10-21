@@ -1,10 +1,10 @@
 {
-  "version": "2.0.00000",
-  "versionBase": "2.0",
-  "buildNumber": "00000",
-  "versionCode": 200000,
-  "buildDate": "2026-10-21T04:57:09.430Z",
-  "productName": "St. Android's Missal",
-  "internalName": "st-androids-missal",
+  "version": "2.1.75996",
+  "versionBase": "2.1",
+  "buildNumber": "75996",
+  "versionCode": 200001,
+  "buildDate": "2026-10-21T05:16:48.088Z",
+  "productName": "Hello, Word: Sanctissimissa",
+  "internalName": "helloword",
   "packageName": "mba.robin.helloword"
 }
