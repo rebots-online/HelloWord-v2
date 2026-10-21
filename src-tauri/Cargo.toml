@@ -1,6 +1,6 @@
 [package]
 name = "st-androids-missal"
-version = "2.4.76014"
+version = "2.5.76016"
 description = "St. Android's Missal — the Traditional Latin Mass and Divine Office as a navigable subway map"
 authors = ["Robin L. M. Cheung, MBA"]
 edition = "2021"
