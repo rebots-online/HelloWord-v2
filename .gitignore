@@ -56,3 +56,6 @@ AGENTS.md
 session-mgmt-context.md
 sanctissimissa-release-state.json
 VENDORED/divinum-officium.link-superseded-*
+
+# Auto-saved per-session snapshot; rewritten by hooks, never source
+.anchor/session-state.md
