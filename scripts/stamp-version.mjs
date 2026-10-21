@@ -29,9 +29,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const p = (rel) => resolve(ROOT, rel);
 
-const PRODUCT = "St. Android's Missal";
-const INTERNAL = 'st-androids-missal';
-const PACKAGE = 'mba.robin.helloword'; // must match tauri.conf.json identifier — no underscores, no hyphens
+import { appIdentity } from './app-identity.mjs';
+
+// Identity comes ONLY from .env (scripts/app-identity.mjs); the stamp applies it.
+const { product: PRODUCT, slug: INTERNAL, id: PACKAGE } = appIdentity();
 
 let MAJOR, MINOR, BUILD;
 const lockPath = p('release.lock');
@@ -91,11 +92,27 @@ writeFileSync(p('package-lock.json'), JSON.stringify(pkgLock, null, 2) + '\n');
 
 const conf = JSON.parse(readFileSync(p('src-tauri/tauri.conf.json'), 'utf8'));
 conf.version = VERSION;
+conf.productName = PRODUCT;
+conf.mainBinaryName = INTERNAL;
+conf.identifier = PACKAGE;
 conf.bundle ??= {};
 conf.bundle.android ??= {};
 conf.bundle.android.versionCode = VERSION_CODE;
 conf.bundle.android.autoIncrementVersionCode = false;
 writeFileSync(p('src-tauri/tauri.conf.json'), JSON.stringify(conf, null, 2) + '\n');
+
+// Android launcher label follows the same .env product name.
+const stringsPath = p('src-tauri/gen/android/app/src/main/res/values/strings.xml');
+if (existsSync(stringsPath)) {
+  const xmlName = PRODUCT.replace(/&/g, '&amp;').replace(/'/g, '&#x27;').replace(/</g, '&lt;');
+  writeFileSync(
+    stringsPath,
+    readFileSync(stringsPath, 'utf8').replace(
+      /(<string name="(?:app_name|main_activity_title)">)[^<]*(<\/string>)/g,
+      `$1"${xmlName}"$2`,
+    ),
+  );
+}
 
 const cargo = readFileSync(p('src-tauri/Cargo.toml'), 'utf8')
   .replace(/^version\s*=\s*"[^"]*"/m, `version = "${VERSION}"`);
@@ -134,5 +151,6 @@ for (const f of [
   'package-lock.json',
   'src-tauri/tauri.conf.json',
   'src-tauri/Cargo.toml',
+  'src-tauri/gen/android/app/src/main/res/values/strings.xml',
 ])
   console.log(`  ✓ ${f} → ${VERSION}`);

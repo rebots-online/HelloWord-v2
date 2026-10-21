@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+APP_SLUG="$(node "$(dirname "${BASH_SOURCE[0]}")/app-identity.mjs" slug)"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -7,7 +8,7 @@ cd "$ROOT"
 VERSION="$(node -p "JSON.parse(require('fs').readFileSync('version.json','utf8')).version")"
 SOURCE="src-tauri/gen/android/app/build/intermediates/merged_native_libs/universalRelease/mergeUniversalReleaseNativeLibs/out/lib"
 OUTPUT_DIR="src-tauri/gen/android/app/build/outputs/native-debug-symbols/universalRelease"
-OUTPUT="$ROOT/$OUTPUT_DIR/helloword-v${VERSION}-android-native-debug-symbols.zip"
+OUTPUT="$ROOT/$OUTPUT_DIR/${APP_SLUG}-v${VERSION}-android-native-debug-symbols.zip"
 
 abis=(arm64-v8a armeabi-v7a x86 x86_64)
 for abi in "${abis[@]}"; do

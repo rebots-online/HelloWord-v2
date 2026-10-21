@@ -11,6 +11,7 @@
 # Usage from Windows:
 #   npm run build:windows:msix
 set -euo pipefail
+APP_SLUG="$(node "$(dirname "${BASH_SOURCE[0]}")/app-identity.mjs" slug)"
 
 VERSION=$(node -p "JSON.parse(require('fs').readFileSync('version.json','utf8')).version")
 EXE="src-tauri/target/x86_64-pc-windows-msvc/release/st-androids-missal.exe"
@@ -55,11 +56,11 @@ echo "=== Packaging MSIX ==="
 winapp package ./msix-stage \
   --manifest ./Package.appxmanifest \
   --cert ./devcert.pfx \
-  --output "helloword-v${VERSION}-windows-x64.msix"
+  --output "${APP_SLUG}-v${VERSION}-windows-x64.msix"
 
 echo ""
 echo "=== Done ==="
-ls -la "helloword-v${VERSION}-windows-x64.msix"
+ls -la "${APP_SLUG}-v${VERSION}-windows-x64.msix"
 echo ""
 echo "For Microsoft Store submission: upload this .msix via Partner Center."
 echo "The Store will re-sign it — the dev cert is sufficient for submission."

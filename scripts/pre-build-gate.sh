@@ -3,6 +3,7 @@
 # Run before ANY build command (web, linux, windows, android).
 # Exits non-zero with a clear message if any check fails.
 set -euo pipefail
+APP_SLUG="$(node "$(dirname "${BASH_SOURCE[0]}")/app-identity.mjs" slug)"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -37,11 +38,11 @@ fi
 # Check 3: dist/ must not already contain artifacts at this version
 # (same version = duplicate build event, even from the same source)
 if [ -d dist ]; then
-  EXISTING=$(find dist -maxdepth 1 -name "helloword-v${VERSION}-*" 2>/dev/null | head -1)
+  EXISTING=$(find dist -maxdepth 1 -name "${APP_SLUG}-v${VERSION}-*" 2>/dev/null | head -1)
   if [ -n "$EXISTING" ]; then
     echo "GATE FAIL: dist/ already contains artifacts at version ${VERSION}."
     echo "Existing artifacts:"
-    find dist -maxdepth 1 -name "helloword-v${VERSION}-*" -exec ls -la {} \;
+    find dist -maxdepth 1 -name "${APP_SLUG}-v${VERSION}-*" -exec ls -la {} \;
     echo ""
     echo "Rebuilding at the same version produces a duplicate build — different"
     echo "binaries with the same version string. Stamp to a new version first:"

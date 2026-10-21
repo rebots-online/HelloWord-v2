@@ -15,6 +15,7 @@
  * There is no --force flag. The fix is always: commit, or stamp.
  */
 import { execSync } from 'node:child_process';
+import { appIdentity } from './app-identity.mjs';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -61,7 +62,7 @@ if (dirty) {
 // 4. dist/ must not already have artifacts at this version
 const distDir = join(ROOT, 'dist');
 if (existsSync(distDir)) {
-  const prefix = `helloword-v${version}-`;
+  const prefix = `${appIdentity().slug}-v${version}-`;
   const existing = readdirSync(distDir).filter(f => f.startsWith(prefix));
   if (existing.length > 0) {
     fail(`dist/ already contains ${existing.length} artifact(s) at version ${version}.\n` +

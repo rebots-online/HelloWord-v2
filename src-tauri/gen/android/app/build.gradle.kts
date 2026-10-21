@@ -16,15 +16,16 @@ val tauriProperties = Properties().apply {
 // Signing credentials live ONLY in Admin-Manual (public repo). The gitignored
 // root .env carries the pointer SAM_KEYSTORE_PROPERTIES; read it in place —
 // never copy the properties file into this tree.
-fun keystorePointer(): String? {
-    System.getenv("SAM_KEYSTORE_PROPERTIES")?.takeIf { it.isNotBlank() }?.let { return it }
+fun dotEnv(key: String): String? {
+    System.getenv(key)?.takeIf { it.isNotBlank() }?.let { return it }
     val envFile = file("../../../../.env")
     if (!envFile.exists()) return null
     return envFile.readLines()
         .map { it.trim() }
-        .firstOrNull { it.startsWith("SAM_KEYSTORE_PROPERTIES=") }
+        .firstOrNull { it.startsWith("$key=") }
         ?.substringAfter("=")?.trim()?.trim('"', '\'')
 }
+fun keystorePointer(): String? = dotEnv("SAM_KEYSTORE_PROPERTIES")
 
 val keystoreProperties = Properties().apply {
     val pointer = keystorePointer()?.replaceFirst(Regex("^~"), System.getProperty("user.home"))
@@ -46,7 +47,7 @@ val keystoreProperties = Properties().apply {
 base {
     // Every artifact filename must be self-identifying: product + stamped version.
     // Never Gradle's default "app-universal-release.*". Drives APK and AAB output names.
-    archivesName.set("helloword-v" + tauriProperties.getProperty("tauri.android.versionName", "0.0"))
+    archivesName.set((dotEnv("APP_SLUG") ?: error("APP_SLUG missing from .env")) + "-v" + tauriProperties.getProperty("tauri.android.versionName", "0.0"))
 }
 
 android {

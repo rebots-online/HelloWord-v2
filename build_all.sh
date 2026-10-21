@@ -16,6 +16,8 @@ if [ -z "${JAVA_HOME:-}" ]; then
 fi
 
 TAURI=./node_modules/.bin/tauri
+APP_SLUG="$(node scripts/app-identity.mjs slug)"
+APP_PRODUCT_NAME="$(node scripts/app-identity.mjs product)"
 
 test -d node_modules || npm ci
 
@@ -24,7 +26,7 @@ test -d node_modules || npm ci
 npm run stamp
 (cd src-tauri && cargo update --workspace)
 VERSION="$(tr -d '\r\n' < version.txt)"
-git add Package.appxmanifest version.txt version.json package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+git add Package.appxmanifest version.txt version.json package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/gen/android/app/src/main/res/values/strings.xml
 git commit -m "v${VERSION}: stamp (build_all)"
 
 # Web/PWA surface (also the frontend embedded in every native shell)
@@ -44,9 +46,9 @@ if ! "$TAURI" build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundle
   (cd "$NSIS_PROJ" && makensis -INPUTCHARSET UTF8 installer.nsi)
   mkdir -p src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis
   mv "$NSIS_PROJ/nsis-output.exe" \
-    "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/St. Android's Missal_${VERSION}_x64-setup.exe"
+    "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/${APP_PRODUCT_NAME}_${VERSION}_x64-setup.exe"
 fi
-test -f src-tauri/target/x86_64-pc-windows-msvc/release/st-androids-missal.exe
+test -f src-tauri/target/x86_64-pc-windows-msvc/release/${APP_SLUG}.exe
 ls src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*_x64-setup.exe >/dev/null
 
 # Android: debug APK, then release APK + AAB with native symbols preserved

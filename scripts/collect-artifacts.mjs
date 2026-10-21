@@ -2,6 +2,7 @@
 // Strict CC12 collector: one stamped release set, slug-first names, no deletion
 // of historical artifacts, hashes from the final files, and fail-closed gaps.
 
+import { appIdentity } from './app-identity.mjs';
 import {
   copyFileSync,
   existsSync,
@@ -24,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = resolve(ROOT, 'dist');
 const WEBDIST = resolve(ROOT, 'dist-web');
-const SLUG = 'helloword';
+const SLUG = appIdentity().slug;
 const versionJson = JSON.parse(readFileSync(resolve(ROOT, 'version.json'), 'utf8'));
 const VERSION = versionJson.version;
 const VERSION_CODE = String(versionJson.versionCode);
@@ -92,7 +93,7 @@ const sources = [
   },
   {
     id: 'windows-standalone', platform: 'windows', kind: 'exe',
-    source: optional('windows-standalone', 'windows', 'exe', () => resolve(ROOT, 'src-tauri/target/x86_64-pc-windows-msvc/release/st-androids-missal.exe')),
+    source: optional('windows-standalone', 'windows', 'exe', () => resolve(ROOT, `src-tauri/target/x86_64-pc-windows-msvc/release/${SLUG}.exe`)),
     filename: `${PREFIX}-windows-x64-standalone.exe`,
   },
   {
