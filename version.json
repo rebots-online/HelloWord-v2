@@ -1,9 +1,9 @@
 {
-  "version": "1.41.75958",
-  "versionBase": "1.41",
-  "buildNumber": "75958",
-  "versionCode": 100041,
-  "buildDate": "2026-10-21T04:38:27.221Z",
+  "version": "1.42.75977",
+  "versionBase": "1.42",
+  "buildNumber": "75977",
+  "versionCode": 100042,
+  "buildDate": "2026-10-21T04:57:09.430Z",
   "productName": "St. Android's Missal",
   "internalName": "st-androids-missal",
   "packageName": "mba.robin.helloword"
