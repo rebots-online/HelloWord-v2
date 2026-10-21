@@ -51,23 +51,6 @@ ls src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*_x64-setup.exe >
 
 # Android: debug APK, then release APK + AAB with native symbols preserved
 "$TAURI" android build --debug --apk --ci
-
-# Dual-key release: when .env names an alternate upload-key pointer
-# (SAM_ALT_KEYSTORE_PROPERTIES, Admin-Manual path only), build the release
-# with it first and park its outputs inside the gitignored Gradle build dir;
-# they are labeled into dist/ after collection. The primary-key build below
-# then produces the standard outputs the collector expects.
-ANDROID_OUT=src-tauri/gen/android/app/build/outputs
-ALT_OUT=src-tauri/gen/android/app/build/outputs-altkey
-ALT_PROPS="$(sed -n 's/^SAM_ALT_KEYSTORE_PROPERTIES=//p' .env 2>/dev/null | tail -1)"
-ALT_PROPS="${ALT_PROPS/#\~/$HOME}"
-if [ -n "$ALT_PROPS" ]; then
-  test -f "$ALT_PROPS"
-  SAM_KEYSTORE_PROPERTIES="$ALT_PROPS" CARGO_PROFILE_RELEASE_STRIP=false "$TAURI" android build --apk --aab --ci
-  mkdir -p "$ALT_OUT"
-  cp "$ANDROID_OUT/apk/universal/release/standroidsmissal-v${VERSION}-universal-release.apk" "$ALT_OUT/"
-  cp "$ANDROID_OUT/bundle/universalRelease/standroidsmissal-v${VERSION}-universal-release.aab" "$ALT_OUT/"
-fi
 CARGO_PROFILE_RELEASE_STRIP=false "$TAURI" android build --apk --aab --ci
 
 # Android native debug symbols zip
@@ -75,35 +58,5 @@ bash scripts/package-android-symbols.sh
 
 # Collect the stamped set into dist/ (append-only, hashed, manifested)
 npm run collect-artifacts
-
-# Label every release APK/AAB in dist/ with the upload certificate that signed it.
-signer_label() {
-  keytool -printcert -jarfile "$1" | sed -n 's/^Owner: CN=\([^,]*\).*/\1/p' | head -1 \
-    | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/-$//'
-}
-KEYMAP="dist/standroidsmissal-v${VERSION}-android-signing-keys.md"
-{
-  echo "# v${VERSION} Android release signing"
-  echo
-  echo "| file | signer | certificate SHA-256 |"
-  echo "|---|---|---|"
-} > "$KEYMAP"
-label_into_dist() {
-  local src="$1" ext="$2" label sha
-  label="$(signer_label "$src")"
-  test -n "$label"
-  sha="$(keytool -printcert -jarfile "$src" | sed -n 's/^\s*SHA256: //p' | head -1)"
-  local dst="dist/standroidsmissal-v${VERSION}-android-universal-release-key-${label}.${ext}"
-  test ! -e "$dst"
-  cp "$src" "$dst"
-  echo "| $(basename "$dst") | ${label} | ${sha} |" >> "$KEYMAP"
-}
-label_into_dist "dist/standroidsmissal-v${VERSION}-android-universal-release.apk" apk
-label_into_dist "dist/standroidsmissal-v${VERSION}-android-universal-release.aab" aab
-if [ -n "$ALT_PROPS" ]; then
-  label_into_dist "$ALT_OUT/standroidsmissal-v${VERSION}-universal-release.apk" apk
-  label_into_dist "$ALT_OUT/standroidsmissal-v${VERSION}-universal-release.aab" aab
-fi
-cat "$KEYMAP"
 
 echo "✅ build_all complete — artifacts in dist/ (MSI/MSIX pending Windows host)"

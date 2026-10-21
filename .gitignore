@@ -58,4 +58,6 @@ sanctissimissa-release-state.json
 VENDORED/divinum-officium.link-superseded-*
 
 # Auto-saved per-session snapshot; rewritten by hooks, never source
-.anchor/session-state.md
+.anchor/
+.vscode/
+!.env.example
