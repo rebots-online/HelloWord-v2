@@ -31,6 +31,15 @@ val keystoreProperties = Properties().apply {
     val propFile = if (pointer != null) file(pointer) else file("../keystore.properties")
     if (propFile.exists()) {
         propFile.inputStream().use { load(it) }
+        // A relative storeFile resolves beside its properties file (Admin-Manual
+        // layout), falling back to the bare filename in that directory.
+        getProperty("storeFile")?.let { sf ->
+            if (!File(sf).isAbsolute) {
+                val dir = propFile.absoluteFile.parentFile
+                val candidate = File(dir, sf).takeIf { it.exists() } ?: File(dir, File(sf).name)
+                setProperty("storeFile", candidate.absolutePath)
+            }
+        }
     }
 }
 
