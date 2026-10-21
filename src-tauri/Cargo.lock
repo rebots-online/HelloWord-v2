@@ -2771,7 +2771,7 @@ dependencies = [
 
 [[package]]
 name = "st-androids-missal"
-version = "2.7.76038"
+version = "2.8.76048"
 dependencies = [
  "serde",
  "serde_json",
