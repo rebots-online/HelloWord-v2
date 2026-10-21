@@ -32,7 +32,7 @@ const p = (rel) => resolve(ROOT, rel);
 import { appIdentity } from './app-identity.mjs';
 
 // Identity comes ONLY from .env (scripts/app-identity.mjs); the stamp applies it.
-const { product: PRODUCT, slug: INTERNAL, id: PACKAGE } = appIdentity();
+const { product: PRODUCT, slug: INTERNAL, id: PACKAGE, androidAppName: ANDROID_APP_NAME, activityTitle: ACTIVITY_TITLE } = appIdentity();
 
 let MAJOR, MINOR, BUILD;
 const lockPath = p('release.lock');
@@ -101,16 +101,15 @@ conf.bundle.android.versionCode = VERSION_CODE;
 conf.bundle.android.autoIncrementVersionCode = false;
 writeFileSync(p('src-tauri/tauri.conf.json'), JSON.stringify(conf, null, 2) + '\n');
 
-// Android launcher label follows the same .env product name.
+// Android launcher label and main-activity title, each from its own .env line.
 const stringsPath = p('src-tauri/gen/android/app/src/main/res/values/strings.xml');
 if (existsSync(stringsPath)) {
-  const xmlName = PRODUCT.replace(/&/g, '&amp;').replace(/'/g, '&#x27;').replace(/</g, '&lt;');
+  const xml = (v) => `"${v.replace(/&/g, '&amp;').replace(/'/g, '&#x27;').replace(/</g, '&lt;')}"`;
   writeFileSync(
     stringsPath,
-    readFileSync(stringsPath, 'utf8').replace(
-      /(<string name="(?:app_name|main_activity_title)">)[^<]*(<\/string>)/g,
-      `$1"${xmlName}"$2`,
-    ),
+    readFileSync(stringsPath, 'utf8')
+      .replace(/(<string name="app_name">)[^<]*(<\/string>)/, `$1${xml(ANDROID_APP_NAME)}$2`)
+      .replace(/(<string name="main_activity_title">)[^<]*(<\/string>)/, `$1${xml(ACTIVITY_TITLE)}$2`),
   );
 }
 

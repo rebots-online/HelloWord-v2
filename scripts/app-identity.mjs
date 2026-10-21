@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * app-identity — the ONE source of the app's identity: APP_ID, APP_SLUG and
- * APP_PRODUCT_NAME from the root .env (process env overrides). Every build
+ * app-identity — the ONE source of the app's identity: APP_ID, APP_SLUG,
+ * APP_PRODUCT_NAME, APP_ANDROID_APP_NAME and APP_ANDROID_ACTIVITY_TITLE from the root .env (process env overrides). Every build
  * script, the stamper and Gradle read these; nothing hardcodes them.
  *
  *   node scripts/app-identity.mjs slug|product|id   → prints that value
@@ -33,7 +33,13 @@ export function appIdentity() {
     if (!v) throw new Error(`app-identity: ${key} is not set in .env (see .env.example)`);
     return v;
   };
-  return { id: pick('APP_ID'), slug: pick('APP_SLUG'), product: pick('APP_PRODUCT_NAME') };
+  return {
+    id: pick('APP_ID'),
+    slug: pick('APP_SLUG'),
+    product: pick('APP_PRODUCT_NAME'),
+    androidAppName: pick('APP_ANDROID_APP_NAME'),
+    activityTitle: pick('APP_ANDROID_ACTIVITY_TITLE'),
+  };
 }
 
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
@@ -41,7 +47,7 @@ if (isMain) {
   const key = process.argv[2];
   const ident = appIdentity();
   if (!(key in ident)) {
-    console.error('usage: app-identity.mjs slug|product|id');
+    console.error('usage: app-identity.mjs slug|product|id|androidAppName|activityTitle');
     process.exit(2);
   }
   process.stdout.write(ident[key]);
