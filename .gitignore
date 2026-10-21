@@ -1,0 +1,65 @@
+node_modules/
+# divinum-officium is too large (626MB) — clone separately if needed:
+# https://github.com/DivinumOfficium/divinum-officium
+VENDORED/divinum-officium
+public/missal.db
+# dist/ is build output — excluded entirely from this source-only repo.
+# Rebuild with: npm run build
+dist/
+dist-*/
+# assets/missal.db is a symlink to the original repo (183MB, too large for GitHub free LFS).
+# If missing, run `npm run ingest` to rebuild from VENDORED/.
+assets/missal.db
+src-tauri/target/
+src-tauri/gen/android/app/build/
+src-tauri/gen/android/tauri.properties
+src-tauri/gen/apple/build/
+*.local
+.DS_Store
+*.log
+.env
+.env.*
+src-tauri/gen/schemas/
+**/*.keystore
+**/*.jks
+**/*.p12
+release.lock
+build-logs/
+standroidsmissal-release-state.json
+tests/.tmp/
+# MSIX build artifacts (winapp CLI)
+devcert.pfx
+msix-stage/
+
+# tsc -b incremental state — build output; tracking it makes the
+# pre-build gate fail on every build after the first.
+tsconfig.tsbuildinfo
+
+# Logs live in ~/Admin-Manual/LOGS/standroidsmissal/ (private synced repo).
+LOGS/
+.tmp/
+
+# Forgejo-specific CI (server down as of 2026-09-04; preserved in original repo).
+.forgejo/
+
+# LFS config preserved as backup (Forgejo LFS endpoint, now inactive).
+.lfsconfig
+.lfsconfig.forgejo-backup
+
+# Machine-local caches only (regenerated per workstation — never synced).
+.remember/
+.playwright-mcp/
+.codegraph/
+
+# Agent/tool state and operator-private files — never part of the public repo.
+.zcode/
+.mimosa/
+.devin/
+.v2c/
+.video_agent/
+.claude/
+.tmp-extra-files
+AGENTS.md
+session-mgmt-context.md
+sanctissimissa-release-state.json
+VENDORED/divinum-officium.link-superseded-*

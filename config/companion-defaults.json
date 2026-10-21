@@ -1,0 +1,7 @@
+{
+  "preferredNativeRepo": "unsloth/Qwen3.5-2B-GGUF",
+  "preferredDisplayName": "Qwen 3.5 2B",
+  "manualOnlyFamilies": ["LFM"],
+  "offerOrientationUntilCompleted": true,
+  "hostedProvider": { "kind": "openrouter", "baseUrl": "https://openrouter.ai/api/v1", "model": "openrouter/free", "fallbackModel": null, "modelLabel": "OpenRouter Free" }
+}

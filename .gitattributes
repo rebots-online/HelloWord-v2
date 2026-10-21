@@ -1,0 +1,3 @@
+# No LFS in this repo — source-only checkpoint.
+# VENDORED/ and assets/missal.db are symlinks (gitignored) back to the original repo.
+# dist/ is entirely gitignored (build output — rebuild with npm run build).

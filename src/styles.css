@@ -1,0 +1,2154 @@
+/* St. Android's Missal — design system
+   Parchment & ink, illuminated by the liturgical color of the day. */
+
+:root {
+  --ink: #221c14;
+  --ink-soft: #4a4034;
+  --ink-faint: #8a7d6a;
+  --parchment: #f6f0e2;
+  --parchment-deep: #ece2cc;
+  --vellum: #fbf7ee;
+  --gold: #a97e13;
+  --gold-bright: #d4a017;
+  --line-catechumens: #a97e13;
+  --line-faithful: #7a1f2b;
+  --line-office: #274b69;
+  --rail: #2b241b;
+  --rail-text: #d9cdb8;
+
+  /* seasonal accents (set on <html> as data-color) */
+  --accent: #3f7a52;
+  --accent-soft: #3f7a5226;
+
+  /* bilingual pane delineation — darker tint in light themes, lighter in dark */
+  --pane-latin-bg: rgba(84, 62, 26, 0.075);
+  --pane-english-bg: rgba(84, 62, 26, 0.035);
+
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+  --sans: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* ── Semantic theme tokens (decision 13) ─────────────────────
+     Component rules consume ONLY these; the raw parchment palette above
+     supplies the skeuomorphic-light values. A theme is data-theme (family)
+     × data-mode (light|dark) on <html>; data-color stays orthogonal.
+     The FULL matrix lives in DOCS/THEMES.md: every family defines the core
+     palette in BOTH modes (html[data-theme='X'] = light,
+     html[data-theme='X'][data-mode='dark'] = dark); the mode-level element
+     tokens below carry their light values here and dark values in the shared
+     html[data-mode='dark'] block at the foot of the theme section. */
+  --surface: var(--parchment);
+  --surface-2: var(--vellum);
+  --card-border: var(--parchment-deep);
+  --rail-bg: var(--rail);
+  --card: var(--vellum);
+  --card-shadow: none;
+
+  /* mode-level element tokens (light defaults here; dark in the shared
+     html[data-mode='dark'] block — families never redeclare these) */
+  --scheme: light;
+  --on-accent: #ffffff;
+  --scrim: rgba(0, 0, 0, 0.35);
+  --shadow-color: rgba(0, 0, 0, 0.22);
+  --shadow-strong: rgba(0, 0, 0, 0.38);
+  --hit-bg: var(--card);
+  --mark-ann: rgba(242, 214, 122, 0.45);
+  --query-bg: rgba(169, 126, 19, 0.18);
+  --dot-border: rgba(0, 0, 0, 0.13);
+  --lens-a: rgba(200, 170, 80, 0.12);
+  --lens-b: rgba(80, 140, 200, 0.12);
+  --marker-yellow: rgba(212, 160, 23, 0.28);
+  --marker-green: rgba(63, 122, 82, 0.24);
+  --marker-pink: rgba(156, 39, 51, 0.18);
+  --marker-blue: rgba(39, 75, 105, 0.2);
+
+  /* liturgical text-role tokens (§7.7, consumed by every family) */
+  --rubric: #9c2733;
+  --dialogue-p: #9c2733;
+  --dialogue-s: #5d3a80;
+
+  /* constants — the rail is dark in every family × mode, so its overlays and
+     the context-menu/tooltip family never vary with the theme */
+  --rail-chip-bg: rgba(255, 255, 255, 0.06);
+  --rail-overlay: rgba(255, 255, 255, 0.1);
+  --rail-overlay-strong: rgba(255, 255, 255, 0.14);
+  --rail-chip-border: rgba(255, 255, 255, 0.18);
+  --rail-chip-ring: rgba(255, 255, 255, 0.4);
+  --rail-chip-text: #f2e9d8;
+  --rail-chip-muted: #bdb09a;
+  --menu-bg: var(--rail);
+  --menu-text: var(--rail-text);
+  --menu-divider: rgba(255, 255, 255, 0.12);
+  --badge-play: #1b1c17;
+  --badge-ms: #0e5a2f;
+  --ann-accent-gold: #d4a017;
+  --ann-accent-rose: #b0607a;
+  --ann-accent-sky: #5f7fa8;
+  --ann-accent-moss: #6e7f4e;
+
+  color-scheme: var(--scheme);
+}
+
+html[data-color='purple'] { --accent: #5d3a80; --accent-soft: #5d3a8022; }
+html[data-color='red'] { --accent: #9c2733; --accent-soft: #9c273322; }
+html[data-color='green'] { --accent: #3f7a52; --accent-soft: #3f7a5222; }
+html[data-color='white'] { --accent: #a97e13; --accent-soft: #a97e1322; }
+html[data-color='black'] { --accent: #33302b; --accent-soft: #33302b22; }
+html[data-color='rose'] { --accent: #b76a7d; --accent-soft: #b76a7d22; }
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: var(--serif);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.app { display: grid; grid-template-columns: 232px 1fr; height: 100%; }
+
+/* Collapsed rail. Driven by `data-rail`, not a media query, because the
+   hold-open pin must be able to win against the viewport width. Nothing that
+   cannot fit a 64px icon column may render here — the brand words and the
+   feast name become tooltips (#3). */
+.app[data-rail='icons'] { grid-template-columns: 64px 1fr; }
+.app[data-rail='icons'] .rail { padding: 12px 8px; align-items: center; }
+.app[data-rail='icons'] .rail .label,
+.app[data-rail='icons'] .rail .brand { display: none; }
+.app[data-rail='icons'] .rail button.nav { justify-content: center; padding: 10px 0; }
+.app[data-rail='icons'] .rail .nav .ico { width: auto; }
+
+/* ── Left rail ─────────────────────────────────────────────── */
+.rail {
+  background: var(--rail-bg);
+  color: var(--rail-text);
+  display: flex; flex-direction: column;
+  padding: 14px 10px;
+  gap: 4px;
+  font-family: var(--sans);
+}
+.rail-head {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  grid-template-areas: 'mark toggle' 'brand brand';
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 10px;
+}
+.app[data-rail='icons'] .rail-head {
+  grid-template-columns: 1fr;
+  grid-template-areas: 'mark' 'toggle';
+  justify-items: center;
+  gap: 8px;
+}
+/* The mark sits ABOVE the hamburger and carries the identity on its own —
+   the words never appear in icon mode. */
+.rail-mark {
+  grid-area: mark;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: block;
+}
+.rail-toggle {
+  grid-area: toggle;
+  justify-self: end;
+  background: none; border: 0; color: var(--rail-text);
+  font: 16px/1 var(--sans);
+  width: 32px; height: 32px;
+  border-radius: 8px; cursor: pointer;
+}
+.app[data-rail='icons'] .rail-toggle { justify-self: center; }
+.rail-toggle:hover { background: var(--rail-overlay-strong); }
+.rail-toggle[aria-expanded='true'] { color: var(--gold-bright); }
+.rail .brand {
+  grid-area: brand;
+  font-family: var(--serif);
+  font-size: 17px; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--gold-bright);
+  padding: 6px 2px 0;
+  line-height: 1.25;
+}
+.rail button.nav {
+  display: flex; align-items: center; gap: 10px;
+  background: none; border: 0; color: var(--rail-text);
+  font: 500 14px var(--sans);
+  padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  text-align: left; width: 100%;
+}
+.rail button.nav:hover { background: var(--rail-overlay); }
+.rail button.nav.active { background: var(--accent); color: var(--on-accent); }
+.rail .nav .ico { font-size: 16px; width: 20px; text-align: center; }
+.rail .spacer { flex: 1; }
+.day-chip {
+  margin-top: 10px; padding: 10px; border-radius: 10px;
+  background: var(--rail-chip-bg); font-family: var(--sans); font-size: 12px;
+}
+.day-chip .date-row { display: flex; align-items: center; gap: 8px; }
+.day-chip input[type='date'] {
+  background: transparent; color: var(--rail-text);
+  border: 1px solid var(--rail-chip-border); border-radius: 6px; padding: 3px 5px;
+  font: 12px var(--sans); width: 100%;
+  color-scheme: dark;
+}
+.day-chip .swatch { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 1px solid var(--rail-chip-ring); flex: none; }
+.day-chip .feast { margin-top: 7px; color: var(--rail-chip-text); font-family: var(--serif); font-size: 13px; line-height: 1.35; }
+.day-chip .season { color: var(--rail-chip-muted); margin-top: 3px; }
+
+/* Icon-mode day control: a calendar button whose picker flies out over the
+   main area, because a date input and a feast name cannot live in 64px. */
+.day-chip-icon {
+  position: relative;
+  margin-top: 10px;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--rail-chip-bg); border: 0; border-radius: 10px;
+  color: var(--rail-text); font-size: 18px; cursor: pointer;
+}
+.day-chip-icon:hover, .day-chip-icon.open { background: var(--rail-overlay-strong); }
+.day-chip-icon .swatch {
+  position: absolute; top: 4px; right: 4px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--accent); border: 1px solid var(--rail-chip-ring);
+}
+.day-flyout {
+  position: fixed;
+  left: 72px; bottom: 14px;
+  z-index: 60;
+  width: 260px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--rail-bg);
+  color: var(--rail-text);
+  font-family: var(--sans); font-size: 12px;
+  box-shadow: 0 10px 30px var(--shadow-strong);
+}
+.day-flyout .date-row { display: flex; align-items: center; gap: 8px; }
+.day-flyout input[type='date'] {
+  background: transparent; color: var(--rail-text);
+  border: 1px solid var(--rail-chip-border); border-radius: 6px; padding: 3px 5px;
+  font: 12px var(--sans); flex: 1;
+  color-scheme: dark;
+}
+.day-flyout .swatch { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 1px solid var(--rail-chip-ring); flex: none; }
+.day-flyout-close { background: none; border: 0; color: var(--rail-text); font-size: 16px; cursor: pointer; }
+.day-flyout .feast { margin-top: 8px; color: var(--rail-chip-text); font-family: var(--serif); font-size: 13px; line-height: 1.35; }
+.day-flyout .season { color: var(--rail-chip-muted); margin-top: 3px; }
+
+/* ── Main column ───────────────────────────────────────────── */
+/* min-width: 0 — without it the strip's intrinsic width would force the 1fr
+   column past the viewport instead of scrolling inside its own container */
+.main { display: grid; grid-template-rows: auto auto 1fr; overflow: hidden; min-width: 0; }
+.masthead {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  padding: 16px 26px 12px;
+  border-bottom: 3px double var(--accent);
+  background: linear-gradient(var(--surface-2), var(--surface));
+}
+.masthead h1 { font-size: 22px; margin: 0; font-weight: 700; }
+.masthead .sub { font-family: var(--sans); font-size: 13px; color: var(--ink-faint); }
+.masthead .rank-badge {
+  font: 600 11px var(--sans); letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 3px 10px;
+}
+.content { overflow: auto; padding: 20px 26px 60px; }
+
+/* ── Ever-present map strip (HelloWord parity, our theming) ── */
+.mapstrip {
+  display: flex; align-items: flex-start;
+  padding: 7px 14px 5px;
+  background: linear-gradient(var(--surface-2), var(--surface));
+  border-bottom: 1px solid var(--card-border);
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+  font-family: var(--sans);
+  user-select: none;
+}
+.mapstrip::-webkit-scrollbar { display: none; }
+.mstation {
+  --seg: var(--line-catechumens);
+  position: relative; flex: 1 0 58px; min-width: 58px; max-width: 110px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: inherit;
+}
+.mstation.seg-faithful { --seg: var(--line-faithful); }
+.mstation.seg-office { --seg: var(--line-office); }
+/* each cell paints its own stretch of the line — segment color changes at the trunk boundary */
+.mstation::before {
+  content: ''; position: absolute; top: 9px; left: 0; right: 0; height: 4px;
+  background: var(--seg);
+}
+.mstation:first-child::before { left: 50%; border-radius: 2px 0 0 2px; }
+.mstation:last-child::before { right: 50%; border-radius: 0 2px 2px 0; }
+.mstation .mdot {
+  position: relative; z-index: 1; box-sizing: border-box;
+  width: 12px; height: 12px; margin-top: 5px; border-radius: 50%;
+  background: var(--card); border: 3px solid var(--ink-soft);
+  transition: transform 0.15s;
+}
+.mstation:hover .mdot { transform: scale(1.2); }
+/* propers: interchange rings in the day's liturgical color, with a color core */
+.mstation.proper .mdot { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 2.5px, var(--card) 2.5px); }
+.mstation.conditional .mdot { border-style: dashed; border-width: 2px; }
+/* index-based journey state — the HelloWord mechanism */
+.mstation.active .mdot { width: 16px; height: 16px; margin-top: 3px; border-width: 4px; }
+.mstation.active .mdot::after {
+  content: ''; position: absolute; inset: -7px; border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: strip-ping 1.8s ease-out infinite;
+}
+.mstation.future { opacity: 0.5; }
+.mstation.future:hover { opacity: 1; }
+@keyframes strip-ping {
+  0% { transform: scale(0.55); opacity: 0.8; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+.mstation .mlabel {
+  font-size: 8.5px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-faint);
+  max-width: 100%; padding: 0 3px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mstation.proper .mlabel { color: var(--gold); }
+.mstation.active .mlabel { color: var(--ink); font-weight: 700; }
+/* office variant: eight hours, serif italic labels on the blue office line.
+   Suppressed while the office view's own side loop is visible (wide layouts);
+   below the office-full breakpoint the loop scrolls away and the strip takes over. */
+@media (min-width: 1101px) { .mapstrip.office { display: none; } }
+.mapstrip.office .mstation { max-width: none; }
+.mapstrip.office .mlabel {
+  font: italic 10.5px var(--serif); color: var(--ink-soft);
+  text-transform: none; letter-spacing: 0.02em;
+}
+.mapstrip.office .mstation.active .mlabel { color: var(--ink); font-weight: 700; }
+@media (max-width: 640px) {
+  .mstation { flex-basis: 46px; min-width: 46px; }
+  .mstation .mlabel { font-size: 7.5px; }
+}
+
+/* ── Map flyout (strip + full map hover) ───────────────────── */
+.map-flyout {
+  position: fixed; z-index: 60;
+  background: var(--surface-2); border: 1px solid var(--card-border);
+  border-top: 3px solid var(--accent);
+  border-radius: 10px; box-shadow: 0 12px 32px var(--shadow-color);
+  padding: 12px 14px; font-family: var(--sans); font-size: 12.5px;
+  pointer-events: none;
+}
+.map-flyout .fly-title { font: italic 700 15px var(--serif); color: var(--ink); }
+.map-flyout .fly-sub { color: var(--ink-faint); font-size: 11px; margin-top: 1px; }
+.map-flyout .fly-incipit { margin: 8px 0 0; padding: 7px 9px; border-radius: 6px; background: var(--pane-latin-bg); }
+.map-flyout .fly-incipit .la { font: italic 13px var(--serif); color: var(--ink); }
+.map-flyout .fly-incipit .en { font-size: 11.5px; color: var(--ink-soft); margin-top: 3px; }
+.map-flyout .fly-incipit .en.missing { font-style: italic; color: var(--ink-faint); }
+.map-flyout .fly-about { margin-top: 8px; color: var(--ink-soft); line-height: 1.45; }
+.map-flyout .fly-media {
+  margin-top: 9px; padding: 8px 9px; border: 1px dashed var(--ink-faint);
+  border-radius: 6px; color: var(--ink-faint); font-size: 11px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.map-flyout .fly-media .badge { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 9.5px; color: var(--gold); }
+
+/* ── Accordion reader sections ─────────────────────────────── */
+.reader-section .head { cursor: pointer; user-select: none; }
+.reader-section .head .chev { color: var(--accent); font-size: 12px; width: 14px; flex: none; }
+.reader-section.collapsed .head { margin-bottom: 0; opacity: 0.75; }
+
+/* ── Split layout with resizable inspector (BX.2) ─────────────── */
+.split.resizable-inspector-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8px var(--inspector-width);
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.single.resizable-inspector-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.resizable-inspector-layout > .content,
+.resizable-inspector-layout > .exegesis {
+  min-width: 0;
+  min-height: 0;
+}
+
+.inspector-main {
+  overflow: hidden;
+}
+
+.inspector-pane {
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── Resizable divider ─────────────────────────────────────────── */
+.inspector-divider {
+  position: relative;
+  background: transparent;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  user-select: none;
+}
+
+.inspector-divider:hover .divider-handle,
+.inspector-divider:focus .divider-handle {
+  background: var(--accent);
+}
+
+.divider-handle {
+  width: 4px;
+  height: 48px;
+  background: var(--ink-faint);
+  border-radius: 2px;
+  transition: background 0.15s ease, height 0.15s ease;
+}
+
+.inspector-divider:hover .divider-handle,
+.inspector-divider:focus .divider-handle {
+  height: 64px;
+}
+
+.inspector-divider:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ── Narrow viewport overlay (mobile) ─────────────────────────── */
+.resizable-inspector-layout.narrow {
+  position: relative;
+}
+
+.inspector-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--surface-2);
+  overflow: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  animation: inspector-slide-up 0.2s ease-out;
+}
+
+@keyframes inspector-slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.inspector-overlay-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--card-border);
+  color: var(--ink);
+  border: 0;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.inspector-overlay-close:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.inspector-open-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 0;
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px var(--shadow-strong);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 90;
+}
+
+.inspector-open-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px var(--shadow-strong);
+}
+
+.inspector-open-btn:active {
+  transform: scale(0.95);
+}
+
+/* ── Legacy split/single (preserved for non-inspector use) ─────── */
+.split { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: 100%; min-height: 0; overflow: hidden; }
+.single { display: grid; grid-template-columns: 1fr; height: 100%; min-height: 0; overflow: hidden; }
+.split > .content, .single > .content { min-width: 0; min-height: 0; }
+
+/* ── Subway map ────────────────────────────────────────────── */
+.map-wrap { overflow-y: auto; }
+
+/* ── Vertical metro map (Montreal-style single column) ─────── */
+.vmap { max-width: 620px; margin: 0 auto; padding: 6px 8px 40px; font-family: var(--sans); }
+.vmap-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.vmap-hint { font: italic 12px var(--serif); color: var(--ink-faint); }
+.vmap-toggle {
+  font: 12px var(--sans); color: var(--ink-soft); background: var(--surface-2);
+  border: 1px solid var(--card-border); border-radius: 20px; padding: 5px 14px; cursor: pointer;
+}
+.vmap-toggle:hover { border-color: var(--accent); color: var(--ink); }
+.vline-header { font: 700 13px var(--sans); letter-spacing: 0.12em; text-transform: uppercase; margin: 18px 0 6px; }
+.vline-header span { font-weight: 400; letter-spacing: 0.02em; text-transform: none; color: var(--ink-faint); margin-left: 8px; }
+
+.vtrunk { position: relative; }
+.vtrunk::before {
+  content: ''; position: absolute; left: 16px; top: 0; bottom: 0; width: 7px;
+  background: var(--line-color, var(--line-catechumens)); border-radius: 4px;
+}
+.vstation {
+  position: relative; display: flex; align-items: center; gap: 12px; width: 100%;
+  background: none; border: 0; text-align: left; cursor: pointer; padding: 7px 6px 7px 0;
+  font-family: inherit;
+}
+.vstation .vdot { width: 34px; height: 34px; flex: 0 0 34px; z-index: 1; }
+.vstation:hover .vlatin { color: var(--accent); }
+.vstation.inactive { opacity: 0.32; cursor: default; }
+.vstation .vlabels { display: flex; flex-direction: column; min-width: 0; }
+.vstation .vlatin { font: italic 15px var(--serif); color: var(--ink); }
+.vstation .veng { font: 11.5px var(--sans); color: var(--ink-faint); }
+.vstation .vnote { margin-left: auto; font: italic 10.5px var(--sans); color: var(--ink-faint); max-width: 180px; text-align: right; }
+.vstation.small { padding: 4px 6px 4px 0; }
+.vstation.small .vlatin { font-size: 13.5px; }
+.vstation.small .vdot { width: 26px; height: 26px; flex-basis: 26px; }
+
+/* Y.1 — the subway map's subtle pulsating, restored: the day's proper
+   stations breathe (layered low-opacity halo + expanding ring behind the
+   dot, after the captured SanctissiMissa reference). Subtle is the
+   contract: low opacity, slow, no layout shift, reduced-motion off. */
+.vdot .vdot-pulse-halo {
+  animation: vdot-breathe 4.2s ease-in-out infinite;
+  transform-box: fill-box; transform-origin: center;
+}
+.vdot .vdot-pulse-ring {
+  animation: vdot-ping 3.2s ease-out infinite;
+  transform-box: fill-box; transform-origin: center;
+}
+@keyframes vdot-breathe {
+  0%, 100% { opacity: 0.07; transform: scale(1); }
+  50% { opacity: 0.22; transform: scale(1.16); }
+}
+@keyframes vdot-ping {
+  0% { opacity: 0.18; transform: scale(0.92); }
+  75% { opacity: 0; transform: scale(1.34); }
+  100% { opacity: 0; transform: scale(1.34); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vdot .vdot-pulse-halo, .vdot .vdot-pulse-ring { animation: none; opacity: 0; }
+}
+
+.vbranch { position: relative; margin: 2px 0 6px 40px; }
+.vbranch::before {
+  content: ''; position: absolute; left: -24px; top: -6px; bottom: 8px; width: 22px;
+  border-left: 3px dashed var(--branch-color, var(--line-catechumens));
+  border-bottom: 3px dashed var(--branch-color, var(--line-catechumens));
+  border-bottom-left-radius: 14px; opacity: 0.55;
+}
+.vbranch.inactive { opacity: 0.45; }
+.vbranch-head {
+  background: none; border: 0; cursor: pointer; font: 12px var(--sans); color: var(--ink-soft);
+  display: flex; align-items: center; gap: 6px; padding: 4px 0; width: 100%; text-align: left;
+}
+.vbranch-head .chev { color: var(--accent); }
+.vbranch-head .vnote { margin-left: 10px; font-style: italic; color: var(--ink-faint); }
+.vbranch-body { position: relative; margin-left: 4px; }
+.vbranch-body::before {
+  content: ''; position: absolute; left: 12px; top: 0; bottom: 14px; width: 4px;
+  background: var(--branch-color, var(--line-catechumens)); opacity: 0.4; border-radius: 3px;
+}
+.vreturn { font: italic 11px var(--sans); color: var(--ink-faint); padding: 2px 0 4px 8px; }
+
+.vlegend { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 26px; padding-top: 12px; border-top: 1px dashed var(--card-border); font: 11.5px var(--sans); color: var(--ink-soft); }
+.vlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.vlegend .vdot { width: 22px; height: 22px; }
+.vlegend .faded { font-style: italic; color: var(--ink-faint); }
+
+/* ── Y.3: content-type subway maps (Scriptura · Horæ) ─────────── */
+.vmap-modes { display: inline-flex; gap: 4px; }
+.vmap-modes button { padding: 4px 12px; }
+/* stops take their line's colour (currentColor in the dot svgs) */
+.scripture-subway .vstation, .office-subway .vstation { color: var(--line-color, var(--accent)); }
+.office-subway .vstation.active-hour .vlatin { color: var(--accent); font-weight: 700; }
+.office-subway .vstation.active-hour .vnote { color: var(--accent); }
+/* the chapter menu that opens ON the book stop (hover) — no native selects */
+.chapter-flyout {
+  position: fixed; z-index: 70; width: 308px; max-height: 46vh; overflow: auto;
+  background: var(--surface-2); border: 1px solid var(--card-border);
+  border-top: 3px solid var(--accent); border-radius: 10px;
+  box-shadow: 0 12px 32px var(--shadow-color); padding: 10px 12px; font-family: var(--sans);
+}
+.chapter-flyout .cf-head { font: italic 700 14px var(--serif); color: var(--ink); margin-bottom: 8px; }
+.chapter-flyout .cf-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+.chapter-flyout .cf-grid button { padding: 3px 9px; font-family: var(--sans); font-style: normal; font-size: 12px; }
+
+/* ── Reader ────────────────────────────────────────────────── */
+.reader-section { margin: 0 0 30px; }
+.reader-section .head {
+  display: flex; align-items: baseline; gap: 10px;
+  border-bottom: 1px solid var(--card-border); padding-bottom: 4px; margin-bottom: 10px;
+}
+.reader-section h3 { margin: 0; font-size: 17px; color: var(--accent); font-variant: small-caps; letter-spacing: 0.04em; }
+.reader-section .src { font: 11px var(--sans); color: var(--ink-faint); }
+.reader-section .src.commune { color: var(--gold); }
+.reader-section.ordinary h3 { color: var(--ink-soft); }
+.reader-section.ordinary .head { border-bottom-style: dashed; }
+.bilingual { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 1100px) { .bilingual { grid-template-columns: 1fr; } }
+.bilingual .latin, .bilingual .english { padding: 10px 12px; border-radius: 8px; }
+.bilingual .latin { font-size: 16.5px; background: var(--pane-latin-bg); }
+.bilingual .english { color: var(--ink-soft); font-size: 15px; background: var(--pane-english-bg); }
+.bilingual .lang-tag { font: 600 10px var(--sans); letter-spacing: 0.1em; color: var(--ink-faint); text-transform: uppercase; display: block; margin-bottom: 5px; }
+.verse-ref { color: var(--gold); font-style: italic; font-size: 0.86em; display: block; margin: 6px 0 2px; }
+.reader p { margin: 0 0 8px; white-space: pre-wrap; }
+mark.ann { background: var(--mark-ann); border-radius: 2px; padding: 0 1px; }
+.ann-list { margin-top: 8px; }
+.ann-item { font: 13px var(--sans); background: var(--surface-2); border-left: 3px solid var(--gold); padding: 6px 10px; border-radius: 0 6px 6px 0; margin: 4px 0; }
+.ann-item .quote { font-family: var(--serif); font-style: italic; color: var(--ink-soft); }
+.ann-item button { border: 0; background: none; color: var(--ink-faint); cursor: pointer; float: right; }
+
+/* ── Context menu ─────────────────────────────────────────── */
+.ctx-menu {
+  position: fixed; z-index: 50; min-width: 240px;
+  background: color-mix(in srgb, var(--menu-bg) 96%, transparent); color: var(--menu-text); border-radius: 10px;
+  box-shadow: 0 10px 30px var(--shadow-strong); padding: 6px;
+  font-family: var(--sans); font-size: 13px;
+  backdrop-filter: blur(4px);
+  /* vertical glide: the force-field retreat and the open placement */
+  transition: top 120ms ease-out;
+}
+.ctx-menu .sel { padding: 6px 10px 8px; font-family: var(--serif); font-style: italic; color: var(--gold-bright); border-bottom: 1px solid var(--menu-divider); margin-bottom: 4px; max-height: 60px; overflow: hidden; }
+.ctx-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; color: inherit; padding: 7px 10px; border-radius: 6px; cursor: pointer; font: inherit; }
+.ctx-menu button:hover { background: var(--accent); color: var(--on-accent); }
+
+/* ── Right exegesis panel ─────────────────────────────────── */
+.exegesis {
+  border-left: 1px solid var(--card-border);
+  background: var(--surface-2);
+  overflow: auto; padding: 18px;
+  font-family: var(--sans); font-size: 13.5px;
+}
+.exegesis h2 { font-family: var(--serif); font-size: 16px; margin: 0 0 4px; }
+.exegesis .term { color: var(--accent); font-style: italic; font-family: var(--serif); font-size: 18px; }
+.exegesis .hit { background: var(--hit-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 9px 11px; margin: 8px 0; }
+.exegesis .hit .where { font: 600 11px var(--sans); color: var(--ink-faint); display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.exegesis .hit.clickable { cursor: pointer; }
+.exegesis .hit.clickable:hover { outline: 2px solid var(--accent); }
+.exegesis .hit .ref-headline { color: var(--accent); }
+.exegesis .hit .open-hint { color: var(--ink-faint); font-weight: 400; white-space: nowrap; }
+.exegesis .hit .score { color: var(--gold); }
+.exegesis .hit .text { font-family: var(--serif); font-size: 13.5px; }
+.exegesis .llm-slot { margin-top: 14px; border: 1px dashed var(--ink-faint); border-radius: 8px; padding: 10px; color: var(--ink-faint); font-size: 12px; }
+.exegesis .close { float: right; border: 0; background: none; font-size: 16px; cursor: pointer; color: var(--ink-faint); }
+.exegesis .group-title { font: 700 11px var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); margin: 16px 0 4px; }
+.exegesis textarea { width: 100%; min-height: 64px; font: 13px var(--sans); border: 1px solid var(--card-border); border-radius: 6px; padding: 7px; background: var(--hit-bg); }
+.exegesis .btn { background: var(--accent); border: 0; color: var(--on-accent); font: 600 12px var(--sans); border-radius: 6px; padding: 7px 14px; cursor: pointer; margin-top: 6px; }
+
+/* ── Calendar ─────────────────────────────────────────────── */
+.cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-family: var(--sans); }
+.cal-head h2 { font-family: var(--serif); margin: 0; font-size: 20px; }
+.cal-head button { padding: 5px 12px; } /* layout only — skin is the global button rule */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.cal-grid .dow { font: 600 11px var(--sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-faint); text-align: center; padding: 4px 0; }
+.cal-cell {
+  min-height: 86px; background: var(--surface-2); border: 1px solid var(--card-border);
+  border-radius: 8px; padding: 6px 7px; cursor: pointer; position: relative;
+  font-family: var(--sans); overflow: hidden;
+}
+.cal-cell:hover { outline: 2px solid var(--accent); }
+.cal-cell.today { outline: 2px solid var(--gold); }
+.cal-cell.selected { outline: 3px solid var(--accent); }
+.cal-cell .n { font-weight: 700; font-size: 13px; }
+.cal-cell .dot { width: 9px; height: 9px; border-radius: 50%; position: absolute; top: 8px; right: 8px; border: 1px solid var(--dot-border); }
+.cal-cell .feast { font-family: var(--serif); font-size: 11.5px; line-height: 1.3; margin-top: 3px; color: var(--ink-soft); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.cal-cell.empty { background: transparent; border: 0; cursor: default; }
+
+/* liturgical color dots */
+.lc-purple { background: #5d3a80; } .lc-red { background: #9c2733; }
+.lc-green { background: #3f7a52; } .lc-white { background: #f4ead0; }
+.lc-black { background: #2c2925; } .lc-rose { background: #d193a3; }
+
+/* ── Office loop ──────────────────────────────────────────── */
+.office-wrap { display: grid; grid-template-columns: minmax(340px, 480px) 1fr; gap: 28px; align-items: start; }
+@media (max-width: 1100px) { .office-wrap { grid-template-columns: 1fr; } }
+.office-loop { width: 100%; height: auto; }
+.office-loop .hour-node { cursor: pointer; }
+.office-loop text { font-family: var(--sans); }
+.hour-card { background: var(--surface-2); border: 1px solid var(--card-border); border-radius: 10px; padding: 16px 20px; }
+.hour-card h3 { margin: 0 0 2px; font-size: 20px; }
+.hour-card .eng { font: 13px var(--sans); color: var(--ink-faint); margin-bottom: 12px; }
+.hour-card ol { margin: 0; padding-left: 22px; }
+.hour-card li { margin: 5px 0; }
+.hour-card .phase2 { margin-top: 14px; font: 12px var(--sans); color: var(--ink-faint); border-top: 1px dashed var(--card-border); padding-top: 8px; }
+
+/* ── Office full-text view ────────────────────────────────── */
+.office-full { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
+@media (max-width: 1100px) { .office-full { grid-template-columns: 1fr; } }
+.office-rail { position: sticky; top: 0; }
+@media (max-width: 1100px) { .office-rail { position: static; } }
+.office-rail .office-loop { width: 100%; max-width: 280px; height: auto; }
+.hour-meta { background: var(--surface-2); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px 16px; margin-top: 10px; }
+.hour-meta h3 { margin: 0 0 2px; font-size: 18px; }
+.hour-meta .eng { font: 12px var(--sans); color: var(--ink-faint); }
+.office-reader { min-width: 0; }
+.office-heading {
+  font: italic 15px/1.2 var(--serif); color: var(--ink-soft);
+  border-bottom: 1px solid var(--card-border); padding-bottom: 4px;
+  margin: 26px 0 10px; letter-spacing: 0.04em;
+}
+
+.loading { display: grid; place-items: center; height: 100%; color: var(--ink-faint); font-family: var(--sans); }
+.loading .rose { font-size: 42px; animation: spin 3.2s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading .splash-title { font: 700 26px var(--serif); color: var(--ink); margin: 10px 0 2px; }
+.loading .splash-meta { font-size: 11.5px; color: var(--ink-faint); margin-top: 18px; }
+
+/* ── Mandatory app chrome: version tag + About ─────────────── */
+.version-tag {
+  position: fixed; right: 10px; bottom: 6px; z-index: 40;
+  font: 10.5px var(--sans); color: var(--ink-faint); opacity: 0.75;
+  pointer-events: auto; user-select: text;
+}
+.about-overlay {
+  position: fixed; inset: 0; z-index: 70; background: var(--scrim);
+  display: grid; place-items: center;
+}
+.about-card {
+  position: relative; width: min(440px, 92vw);
+  background: var(--surface-2); border: 1px solid var(--card-border);
+  border-top: 4px solid var(--accent); border-radius: 12px;
+  padding: 22px 26px; font-family: var(--sans); font-size: 13.5px;
+  box-shadow: 0 18px 48px var(--shadow-strong);
+}
+.about-card h2 { font-family: var(--serif); margin: 0 0 4px; font-size: 21px; }
+.about-card .tagline { color: var(--ink-soft); font-style: italic; margin: 0 0 14px; }
+.about-card dl { display: grid; grid-template-columns: 88px 1fr; gap: 5px 12px; margin: 0 0 14px; }
+.about-card dt { font-weight: 700; color: var(--ink-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; align-self: baseline; }
+.about-card dd { margin: 0; }
+.about-card .about-links { display: flex; flex-direction: column; gap: 4px; margin: 0 0 12px; }
+.about-card .about-links a { color: var(--accent); text-decoration: none; }
+.about-card .about-links a:hover { text-decoration: underline dotted; }
+.about-card .copyright { color: var(--ink-faint); font-size: 11.5px; margin: 0; border-top: 1px dashed var(--card-border); padding-top: 10px; }
+.about-card .close { position: absolute; top: 10px; right: 12px; border: 0; background: none; cursor: pointer; color: var(--ink-faint); font-size: 15px; }
+
+/* ── Result snippet (query-emphasized bilingual) ───────────── */
+.result-snippet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+}
+.result-primary {
+  font: 14px var(--serif);
+  line-height: 1.5;
+  color: var(--ink);
+}
+.result-query {
+  background: var(--query-bg);
+  border-radius: 3px;
+  padding: 1px 2px;
+  font-weight: 700;
+  font-style: italic;
+}
+.result-companion {
+  font: 13px var(--serif);
+  line-height: 1.4;
+  color: var(--ink-soft);
+  padding-left: 14px;
+  border-left: 2px solid var(--card-border);
+}
+.result-companion em {
+  font-style: italic;
+}
+
+/* ── Concept tags: accordion with linked evidence ──────────── */
+.concept-tag-head {
+  display: flex; align-items: baseline; gap: 6px; width: 100%;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; text-align: left; color: inherit;
+}
+.concept-tag-head .chev { color: var(--accent); font-size: 11px; }
+.auto-badge {
+  font: 600 9px var(--sans); letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--card-border); color: var(--ink-soft);
+  border-radius: 999px; padding: 1px 7px;
+}
+.concept-tag-instances { margin-top: 6px; }
+.concept-tag-more { font: italic 11.5px var(--sans); color: var(--ink-faint); padding: 4px 0; }
+
+/* ── Sacred Scripture (BibleView, §7.6 BB.2) ─────────────────────── */
+.bible-book-grid { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+.bible-book {
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--card-border);
+  border-radius: 8px; padding: 8px 12px; cursor: pointer; font: inherit;
+}
+.bible-book:hover { border-color: var(--accent); }
+.bible-en-only { font-size: 0.7em; opacity: 0.6; vertical-align: super; }
+.bible-back {
+  background: none; border: none; color: var(--accent); cursor: pointer;
+  font: inherit; padding: 0 8px 0 0;
+}
+.bible-chapter-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; }
+.bible-chapter {
+  min-width: 42px; padding: 8px 0; text-align: center; cursor: pointer; font: inherit;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--card-border); border-radius: 6px;
+}
+.bible-chapter:hover { border-color: var(--accent); }
+.bible-chapter-nav { display: inline-flex; gap: 4px; margin-left: 10px; }
+.bible-chapter-nav button {
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--card-border);
+  border-radius: 6px; cursor: pointer; padding: 2px 10px; font: inherit;
+}
+.bible-chapter-nav button:disabled { opacity: 0.35; cursor: default; }
+.bible-liturgy { padding: 4px 14px 8px; font-size: 0.9em; }
+.bible-liturgy-toggle {
+  background: none; border: none; color: var(--accent); cursor: pointer; font: inherit; padding: 2px 0;
+}
+.bible-liturgy ul { list-style: none; margin: 4px 0 0; padding: 0 0 0 14px; }
+.bible-liturgy li { margin: 2px 0; }
+.bible-liturgy li > button {
+  background: none; border: none; color: var(--ink); cursor: pointer; font: inherit;
+  text-decoration: underline dotted; padding: 0;
+}
+.bible-liturgy li > button:hover { color: var(--accent); }
+.bible-cite-meta { color: var(--ink-soft); margin-left: 8px; font-size: 0.85em; }
+.bible-verse sup { color: var(--ink-soft); margin-right: 4px; font-size: 0.72em; }
+.bible-verse.focus { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 4px; }
+
+/* ── Bilingual echo + word callout (align.ts interaction grammar) ── */
+.xlate-echo { background: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 3px; transition: background 0.15s; }
+.selection-echo { 
+  background: color-mix(in srgb, var(--gold) 25%, transparent); 
+  color: inherit;
+  border-radius: 2px; 
+  padding: 0 1px;
+  transition: background 0.12s ease;
+}
+.xlate-callout {
+  position: fixed; z-index: 60; pointer-events: none; max-width: 250px;
+  background: var(--surface-2); color: var(--ink); border: 1px solid var(--accent);
+  border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 14px var(--shadow-color);
+  display: flex; flex-direction: column; gap: 2px; font-size: 0.9em;
+}
+.xlate-callout::before {
+  content: ''; position: absolute; left: 12px; width: 0; height: 0;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+}
+.xlate-callout[data-side='above']::before {
+  bottom: -6px; border-top: 6px solid var(--accent);
+}
+.xlate-callout[data-side='below']::before {
+  top: -6px; border-bottom: 6px solid var(--accent);
+}
+.xlate-callout b { font-size: 1.05em; }
+.xlate-callout-line { color: var(--ink-soft); font-size: 0.82em; line-height: 1.3; }
+
+/* ── Liturgical text roles (all families, §7.7) ────────────── */
+.dialogue-p { color: var(--dialogue-p); font-weight: 600; }
+.dialogue-s { color: var(--dialogue-s); font-weight: 600; }
+.rubric-text { color: var(--rubric); font-style: italic; }
+
+/* ── Theme matrix (DOCS/THEMES.md) ───────────────────────────
+   html[data-theme='X'] is the family's LIGHT cell; EVERY family also has a
+   html[data-theme='X'][data-mode='dark'] cell (compound selector — it must
+   out-specify the light block, so the old single global dark block that lost
+   the cascade to every family is gone). Mode-level element tokens (--scheme,
+   scrim, shadows, markers, …) are defined once each in :root (light values)
+   and in the shared html[data-mode='dark'] block at the foot of this section;
+   family blocks never redeclare them. data-color stays orthogonal to both. */
+
+/* ── Family: skeuomorphic (base default) ──────────────────────
+   Fabric-textured parchment surfaces with weft/warp woven gradients. */
+html[data-theme='skeuomorphic'] {
+  --surface: var(--parchment);
+  --surface-2: var(--vellum);
+  --card: var(--vellum);
+  --card-border: var(--parchment-deep);
+  --rail-bg: var(--rail);
+  --ink: #221c14;
+  --ink-soft: #4a4034;
+  --ink-faint: #8a7d6a;
+  --pane-latin-bg: rgba(84, 62, 26, 0.075);
+  --pane-english-bg: rgba(84, 62, 26, 0.035);
+  --card-shadow: none;
+  --rubric: #9c2733;
+  --dialogue-p: #9c2733;
+  --dialogue-s: #5d3a80;
+}
+/* Fabric texture for skeuomorphic bilingual surfaces */
+html[data-theme='skeuomorphic'] .bilingual .latin,
+html[data-theme='skeuomorphic'] .bilingual .english {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 2px,
+      color-mix(in srgb, var(--ink) 3%, transparent) 2px,
+      color-mix(in srgb, var(--ink) 3%, transparent) 4px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      color-mix(in srgb, var(--ink) 2%, transparent) 2px,
+      color-mix(in srgb, var(--ink) 2%, transparent) 4px
+    );
+}
+/* Piped border and tension shadow for skeuomorphic cards */
+html[data-theme='skeuomorphic'] .bilingual .latin,
+html[data-theme='skeuomorphic'] .bilingual .english,
+html[data-theme='skeuomorphic'] .reader-section,
+html[data-theme='skeuomorphic'] .exegesis .hit,
+html[data-theme='skeuomorphic'] .cal-cell,
+html[data-theme='skeuomorphic'] .hour-card {
+  border: 1px solid var(--card-border);
+  border-left: 3px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  border-right: 3px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--card) 80%, white), inset 0 -1px 0 color-mix(in srgb, var(--ink) 5%, transparent);
+}
+html[data-theme='skeuomorphic'][data-mode='dark'] {
+  /* Deep warm ink surfaces — the operator's own light↔dark pairs from the
+     journal sidecar prototype (DOCS/standroids-journal-sidecar-standalone.html). */
+  --ink: #eee3cd;
+  --ink-soft: #c8bca7;
+  --ink-faint: #9e927f;
+  --surface: #1c1915;
+  --surface-2: #27221c;
+  --card-border: #332c23;
+  --card: #211d18;
+  --rail-bg: var(--rail);
+  --pane-latin-bg: rgba(238, 227, 205, 0.07);
+  --pane-english-bg: rgba(238, 227, 205, 0.035);
+  --card-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  --rubric: #cf6b76;
+  --dialogue-p: #cf6b76;
+  --dialogue-s: #a98bc9;
+}
+
+/* ── Family: glass-acrylic ────────────────────────────────────
+   Frosted glass surfaces with soft blur and subtle transparency. */
+html[data-theme='glass-acrylic'] {
+  --surface: #f8fafc;
+  --surface-2: #f1f5f9;
+  --card: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(148, 163, 184, 0.3);
+  --rail-bg: #1e293b;
+  --ink: #0f172a;
+  --ink-soft: #475569;
+  --ink-faint: #94a3b8;
+  --pane-latin-bg: rgba(148, 163, 184, 0.08);
+  --pane-english-bg: rgba(148, 163, 184, 0.04);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --rubric: #dc2626;
+  --dialogue-p: #dc2626;
+  --dialogue-s: #7c3aed;
+}
+html[data-theme='glass-acrylic'] .bilingual .latin,
+html[data-theme='glass-acrylic'] .bilingual .english,
+html[data-theme='glass-acrylic'] .reader-section,
+html[data-theme='glass-acrylic'] .exegesis .hit,
+html[data-theme='glass-acrylic'] .cal-cell,
+html[data-theme='glass-acrylic'] .hour-card {
+  backdrop-filter: blur(8px);
+}
+html[data-theme='glass-acrylic'][data-mode='dark'] {
+  --surface: #0b1220;
+  --surface-2: #101a2e;
+  --card: rgba(15, 23, 42, 0.72);
+  --card-border: rgba(148, 163, 184, 0.25);
+  --rail-bg: #020617;
+  --ink: #e2e8f0;
+  --ink-soft: #94a3b8;
+  --ink-faint: #64748b;
+  --pane-latin-bg: rgba(148, 163, 184, 0.1);
+  --pane-english-bg: rgba(148, 163, 184, 0.05);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --rubric: #f87171;
+  --dialogue-p: #f87171;
+  --dialogue-s: #a78bfa;
+}
+
+/* ── Family: glass-clear ──────────────────────────────────────
+   Ultra-clear glass with minimal blur and crisp edges. */
+html[data-theme='glass-clear'] {
+  --surface: #fafbfc;
+  --surface-2: #f3f4f6;
+  --card: rgba(255, 255, 255, 0.95);
+  --card-border: rgba(156, 163, 175, 0.2);
+  --rail-bg: #111827;
+  --ink: #030712;
+  --ink-soft: #4b5563;
+  --ink-faint: #9ca3af;
+  --pane-latin-bg: rgba(156, 163, 175, 0.06);
+  --pane-english-bg: rgba(156, 163, 175, 0.03);
+  --card-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --rubric: #ef4444;
+  --dialogue-p: #ef4444;
+  --dialogue-s: #8b5cf6;
+}
+html[data-theme='glass-clear'][data-mode='dark'] {
+  --surface: #05070c;
+  --surface-2: #0a0e16;
+  --card: rgba(255, 255, 255, 0.06);
+  --card-border: rgba(255, 255, 255, 0.16);
+  --rail-bg: #000000;
+  --ink: #f8fafc;
+  --ink-soft: #cbd5e1;
+  --ink-faint: #94a3b8;
+  --pane-latin-bg: rgba(255, 255, 255, 0.07);
+  --pane-english-bg: rgba(255, 255, 255, 0.035);
+  --card-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.5);
+  --rubric: #f87171;
+  --dialogue-p: #f87171;
+  --dialogue-s: #a78bfa;
+}
+
+/* ── Family: retro-futurist ────────────────────────────────────
+   Warm amber-tinted surfaces with 1970s aesthetic and soft glow. */
+html[data-theme='retro-futurist'] {
+  --surface: #fffbeb;
+  --surface-2: #fef3c7;
+  --card: #fef9c3;
+  --card-border: #fbbf24;
+  --rail-bg: #451a03;
+  --ink: #78350f;
+  --ink-soft: #92400e;
+  --ink-faint: #b45309;
+  --pane-latin-bg: rgba(251, 191, 36, 0.12);
+  --pane-english-bg: rgba(251, 191, 36, 0.06);
+  --card-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+  --rubric: #f97316;
+  --dialogue-p: #f97316;
+  --dialogue-s: #ec4899;
+}
+html[data-theme='retro-futurist'][data-mode='dark'] {
+  --surface: #1f1207;
+  --surface-2: #2a1a0a;
+  --card: #261708;
+  --card-border: #b45309;
+  --rail-bg: #170d04;
+  --ink: #fde68a;
+  --ink-soft: #fbbf24;
+  --ink-faint: #d97706;
+  --pane-latin-bg: rgba(251, 191, 36, 0.12);
+  --pane-english-bg: rgba(251, 191, 36, 0.06);
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --rubric: #fb923c;
+  --dialogue-p: #fb923c;
+  --dialogue-s: #f472b6;
+}
+
+/* ── Family: brutalist ────────────────────────────────────────
+   Stark monochrome surfaces with sharp edges and high contrast. */
+html[data-theme='brutalist'] {
+  --surface: #ffffff;
+  --surface-2: #f5f5f5;
+  --card: #ffffff;
+  --card-border: #000000;
+  --rail-bg: #000000;
+  --ink: #000000;
+  --ink-soft: #404040;
+  --ink-faint: #808080;
+  --pane-latin-bg: #f5f5f5;
+  --pane-english-bg: #fafafa;
+  --card-shadow: 4px 4px 0 #000000;
+  --rubric: #dc2626;
+  --dialogue-p: #dc2626;
+  --dialogue-s: #000000;
+}
+html[data-theme='brutalist'][data-mode='dark'] {
+  --surface: #000000;
+  --surface-2: #111111;
+  --card: #000000;
+  --card-border: #ffffff;
+  --rail-bg: #000000;
+  --ink: #ffffff;
+  --ink-soft: #cccccc;
+  --ink-faint: #888888;
+  --pane-latin-bg: #111111;
+  --pane-english-bg: #0a0a0a;
+  --card-shadow: 4px 4px 0 #ffffff;
+  --rubric: #ef4444;
+  --dialogue-p: #ef4444;
+  --dialogue-s: #ffffff;
+}
+
+/* ── Family: retro-terminal (was "neo-brutalist maximalist") ──
+   Phosphor CRT: green primary ink, amber rubric voices, scanline overlay in
+   dark mode; the light cell is green-bar printer paper. Chrome UI goes
+   monospace. (Legacy id 'neo-brutalist' migrates via LEGACY_FAMILY_ALIASES.) */
+html[data-theme='retro-terminal'] {
+  --sans: ui-monospace, 'Cascadia Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  --surface: #f2f7ee;
+  --surface-2: #e9f3e4;
+  --card: #fbfdf9;
+  --card-border: #7fb98a;
+  --rail-bg: #0d1a0c;
+  --ink: #14532d;
+  --ink-soft: #2f6b40;
+  --ink-faint: #6b9678;
+  --pane-latin-bg: rgba(20, 83, 45, 0.08);
+  --pane-english-bg: rgba(180, 83, 9, 0.08);
+  --card-shadow: 0 2px 6px rgba(20, 83, 45, 0.18);
+  --rubric: #b45309;
+  --dialogue-p: #b45309;
+  --dialogue-s: #7c5800;
+}
+/* green-bar printer paper */
+html[data-theme='retro-terminal'][data-mode='light'] body {
+  background-image: repeating-linear-gradient(180deg, transparent 0 26px, rgba(20, 83, 45, 0.05) 26px 52px);
+}
+html[data-theme='retro-terminal'] button { font-family: var(--sans); font-style: normal; }
+html[data-theme='retro-terminal'][data-mode='dark'] {
+  --ink: #7ee787;
+  --ink-soft: #56c271;
+  --ink-faint: #2f7a45;
+  --surface: #050a06;
+  --surface-2: #0a120c;
+  --card: #071009;
+  --card-border: #234d2c;
+  --rail-bg: #020502;
+  --pane-latin-bg: rgba(126, 231, 135, 0.07);
+  --pane-english-bg: rgba(255, 176, 0, 0.06);
+  --card-shadow: 0 0 14px rgba(126, 231, 135, 0.18);
+  --rubric: #ffb000;
+  --dialogue-p: #ffb000;
+  --dialogue-s: #ffcb47;
+}
+/* CRT scanlines — a static fixed overlay: no flicker, reduced-motion-safe */
+html[data-theme='retro-terminal'][data-mode='dark'] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+}
+
+/* ── Family: hello-word-glow ───────────────────────────────────
+   Subway-line glow pulse and Marian violet accents. Light cell = day chapel
+   (pale ice-blue nave); dark cell = the original midnight nave. */
+html[data-theme='hello-word-glow'] {
+  --surface: #eef6fb;
+  --surface-2: #dfeefa;
+  --card: #f7fbfe;
+  --card-border: #9bd7ea;
+  --rail-bg: #0b1f3a;
+  --ink: #0b1f3a;
+  --ink-soft: #33506b;
+  --ink-faint: #6b8299;
+  --pane-latin-bg: rgba(14, 116, 144, 0.08);
+  --pane-english-bg: rgba(14, 116, 144, 0.04);
+  --card-shadow: 0 0 14px rgba(14, 165, 183, 0.25);
+  --rubric: #d94f57;
+  --dialogue-p: #d94f57;
+  --dialogue-s: #6d28d9;
+  --glow-border: rgba(14, 116, 144, 0.35);
+  --glow-border-strong: rgba(14, 116, 144, 0.7);
+  --glow-shadow: rgba(14, 165, 183, 0.12);
+  --glow-shadow-strong: rgba(14, 165, 183, 0.3);
+}
+html[data-theme='hello-word-glow'][data-mode='dark'] {
+  /* Midnight nave — the original HelloWord Glow palette */
+  --surface: #07111f;
+  --surface-2: #0b1f3a;
+  --card: #0b1f3a;
+  --card-border: #63e6ff;
+  --rail-bg: #07111f;
+  --ink: #f3ebd8;
+  --ink-soft: #b8c8d8;
+  --ink-faint: #6b7c8c;
+  --pane-latin-bg: rgba(99, 230, 255, 0.08);
+  --pane-english-bg: rgba(99, 230, 255, 0.04);
+  --card-shadow: 0 0 20px rgba(99, 230, 255, 0.15);
+  --rubric: #ff6b72;
+  --dialogue-p: #ff6b72;
+  --dialogue-s: #8b7cff;
+  --glow-border: rgba(99, 230, 255, 0.4);
+  --glow-border-strong: rgba(99, 230, 255, 0.8);
+  --glow-shadow: rgba(99, 230, 255, 0.1);
+  --glow-shadow-strong: rgba(99, 230, 255, 0.3);
+}
+/* Glow pulse animation for hello-word-glow */
+html[data-theme='hello-word-glow'] .bilingual .latin,
+html[data-theme='hello-word-glow'] .bilingual .english,
+html[data-theme='hello-word-glow'] .reader-section,
+html[data-theme='hello-word-glow'] .exegesis .hit,
+html[data-theme='hello-word-glow'] .cal-cell,
+html[data-theme='hello-word-glow'] .hour-card {
+  animation: glow-pulse 4s ease-in-out infinite;
+  border: 1px solid var(--card-border);
+}
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--glow-shadow), var(--card-shadow);
+    border-color: var(--glow-border);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--glow-shadow-strong), var(--card-shadow);
+    border-color: var(--glow-border-strong);
+  }
+}
+/* Reduced motion override */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme='hello-word-glow'] .bilingual .latin,
+  html[data-theme='hello-word-glow'] .bilingual .english,
+  html[data-theme='hello-word-glow'] .reader-section,
+  html[data-theme='hello-word-glow'] .exegesis .hit,
+  html[data-theme='hello-word-glow'] .cal-cell,
+  html[data-theme='hello-word-glow'] .hour-card {
+    animation: none;
+    border-color: var(--card-border);
+    box-shadow: var(--card-shadow);
+  }
+}
+
+/* ── Family: sanctissimissa (§7.7) ───────────────────────────
+   Elevated white cards on the retained parchment framework; template
+   liturgical red/purple voices; near-white bilingual panes. */
+html[data-theme='sanctissimissa'] {
+  --surface: var(--parchment);
+  --surface-2: #ffffff;
+  --card: #ffffff;
+  --card-border: #e5e7eb;
+  --rail-bg: var(--rail);
+  --ink: #1f2937;
+  --ink-soft: #4b5563;
+  --ink-faint: #9ca3af;
+  --pane-latin-bg: #f8fafc;
+  --pane-english-bg: #fbfbf9;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.10), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+  --rubric: #b91c1c;
+  --dialogue-p: #b91c1c;
+  --dialogue-s: #4c1d95;
+}
+html[data-theme='sanctissimissa'][data-mode='dark'] {
+  --surface: #1c1915;
+  --surface-2: #262626;
+  --card: #262626;
+  --card-border: #404040;
+  --rail-bg: var(--rail);
+  --ink: #f9fafb;
+  --ink-soft: #d1d5db;
+  --ink-faint: #9ca3af;
+  --pane-latin-bg: #2d2d2d;
+  --pane-english-bg: #282828;
+  --card-shadow: 0 4px 10px -1px rgb(0 0 0 / 0.55), 0 2px 4px -2px rgb(0 0 0 / 0.45);
+  --rubric: #e05c5c;
+  --dialogue-p: #e05c5c;
+  --dialogue-s: #a78bfa;
+}
+
+/* sanctissimissa-scoped component idiom: sections as elevated cards */
+html[data-theme='sanctissimissa'] .reader-section {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 14px 18px 16px;
+}
+html[data-theme='sanctissimissa'] .reader-section .head {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--card) 97%, var(--ink)),
+    color-mix(in srgb, var(--card) 90%, var(--ink)));
+  margin: -14px -18px 12px;
+  padding: 10px 18px;
+  border-radius: 12px 12px 0 0;
+  border-bottom: 1px solid var(--card-border);
+  align-items: center;
+}
+html[data-theme='sanctissimissa'] .reader-section h3 {
+  font-size: 19px;
+  color: var(--dialogue-s);
+  letter-spacing: 0.03em;
+}
+html[data-theme='sanctissimissa'] .reader-section .head .chev { transition: transform 0.2s; font-size: 13px; }
+html[data-theme='sanctissimissa'] .reader-section.collapsed { padding-bottom: 0; }
+html[data-theme='sanctissimissa'] .reader-section.collapsed .head {
+  margin-bottom: 0;
+  border-radius: 12px;
+  border-bottom: 0;
+}
+/* propers: gold left border + warm tint against the card */
+html[data-theme='sanctissimissa'] .reader-section:not(.ordinary) {
+  border-left: 4px solid var(--gold);
+  background: color-mix(in srgb, #fef3c7 22%, var(--card));
+}
+html[data-theme='sanctissimissa'][data-mode='dark'] .reader-section:not(.ordinary) {
+  background: color-mix(in srgb, #a97e13 12%, var(--card));
+}
+/* remaining card surfaces pick up the elevation */
+html[data-theme='sanctissimissa'] .exegesis .hit,
+html[data-theme='sanctissimissa'] .cal-cell,
+html[data-theme='sanctissimissa'] .hour-card {
+  background: var(--card);
+  box-shadow: var(--card-shadow);
+}
+
+/* ── Mode-level element tokens (dark) ─────────────────────────
+   One shared dark cell for ALL families. Family light blocks never declare
+   these tokens (only :root does), so no later family block can re-break the
+   cascade the way the old global dark block did. */
+html[data-mode='dark'] {
+  --scheme: dark;
+  --accent-soft: color-mix(in srgb, var(--accent) 17%, transparent);
+  --scrim: rgba(0, 0, 0, 0.55);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --shadow-strong: rgba(0, 0, 0, 0.65);
+  --mark-ann: rgba(212, 160, 23, 0.38);
+  --query-bg: rgba(212, 160, 23, 0.22);
+  --dot-border: rgba(255, 255, 255, 0.2);
+  --lens-a: rgba(200, 170, 80, 0.2);
+  --lens-b: rgba(96, 165, 250, 0.18);
+  --marker-yellow: rgba(212, 160, 23, 0.4);
+  --marker-green: rgba(74, 222, 128, 0.25);
+  --marker-pink: rgba(248, 113, 113, 0.28);
+  --marker-blue: rgba(96, 165, 250, 0.28);
+}
+
+/* ── Interleaved bilingual (BK.2 consumes; §7.7) ───────────── */
+.bilingual.interleaved, .bilingual-interleaved { display: block; }
+.il-pair { margin: 0 0 0.85em; }
+.il-la { font-weight: 600; color: var(--ink); }
+.il-en { display: block; margin-left: 1.1em; font-style: italic; color: var(--ink-faint); font-size: 0.93em; }
+
+/* ── Similarity glyph + clause focus (BL.2 consumes) ───────── */
+.sim-glyph { color: var(--accent); vertical-align: middle; flex: none; }
+.clause-hit { background: color-mix(in srgb, var(--accent) 14%, transparent); border-radius: 3px; }
+
+/* ── Scripture Atlas (BN.1 consumes; §7.7) ─────────────────── */
+.atlas-toolbar { display: flex; gap: 8px; margin: 0 0 14px; font-family: var(--sans); }
+.atlas-toolbar button { padding: 5px 14px; } /* layout only — skin is the global button rule */
+.atlas-field { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px; padding: 6px 0; }
+.atlas-label { background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--serif); color: var(--ink); } /* font-size arrives inline (differential sizing) */
+.atlas-label:hover { color: var(--accent); }
+.atlas-cluster { font-variant: small-caps; letter-spacing: 0.06em; color: var(--ink-soft); font-size: 15px; margin: 16px 0 4px; }
+.atlas-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 4px 0; }
+.atlas-cell { padding: 5px 8px; border-radius: 6px; background: var(--pane-english-bg); font-family: var(--serif); min-width: 0; } /* weight arrives inline */
+
+/* ── Journal sidecar workspace (BO.2 consumes; §7.7) ───────── */
+.jsidecar {
+  border-left: 1px solid var(--card-border);
+  background: var(--surface-2);
+  overflow: auto; padding: 18px;
+  font-family: var(--sans); font-size: 13.5px;
+}
+.jsc-source {
+  border-left: 3px solid var(--gold); border-radius: 0 6px 6px 0;
+  background: var(--pane-latin-bg); padding: 7px 10px; margin: 8px 0;
+  font-family: var(--serif); font-style: italic; color: var(--ink-soft);
+}
+.jsc-editor {
+  min-height: 120px; background: var(--card);
+  border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px;
+}
+.jsc-toolbar { display: flex; gap: 6px; margin: 6px 0; }
+.jsc-toolbar button { padding: 4px 10px; } /* layout only — skin is the global button rule */
+.jsc-related { border-top: 1px solid var(--card-border); margin-top: 14px; padding-top: 10px; }
+.jsc-card {
+  background: var(--card); border: 1px solid var(--card-border); border-radius: 8px;
+  padding: 9px 11px; margin: 8px 0;
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 10px;
+}
+.jsc-why { color: var(--ink-faint); font-size: 11.5px; }
+.jsc-evidence { display: flex; flex-wrap: wrap; gap: 5px; }
+.jsc-evidence .chip { background: var(--card-border); color: var(--ink-soft); border-radius: 999px; padding: 2px 9px; font-size: 11px; }
+.jsc-dest { display: flex; flex-wrap: wrap; gap: 6px; }
+.jsc-dest button { padding: 4px 12px; } /* layout only — skin is the global button rule */
+.jsc-toast {
+  position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 80;
+  background: var(--accent); color: var(--on-accent); border-radius: 999px; padding: 8px 18px;
+  font: 600 13px var(--sans); box-shadow: 0 8px 24px var(--shadow-strong);
+  animation: jsc-toast-fade 2.6s ease forwards;
+}
+@keyframes jsc-toast-fade { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ── ThemePicker rail widget (BJ.1; BO.3 mounts) ───────────── */
+.theme-picker {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 10px; padding: 10px; border-radius: 10px;
+  background: var(--rail-chip-bg); font: 12px var(--sans); color: var(--rail-text);
+}
+.theme-picker select, .theme-picker button {
+  background: transparent; color: var(--rail-text);
+  border: 1px solid var(--rail-chip-border); border-radius: 6px; padding: 4px 6px;
+  font: 12px var(--sans); width: 100%; cursor: pointer; text-align: left;
+  color-scheme: dark;
+}
+.theme-picker select:hover, .theme-picker button:hover { border-color: var(--rail-chip-ring); }
+
+/* ── Canonical Bible-order result navigation (BX.4) ───────── */
+.result-grouping-toolbar {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.result-grouping-toolbar button {
+  flex: 1;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font: 600 12px var(--sans);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.result-grouping-toolbar button:hover {
+  border-color: var(--accent);
+  background: var(--card);
+}
+.result-grouping-toolbar button.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+}
+.result-total-count {
+  font: 600 11px var(--sans);
+  color: var(--ink-faint);
+  margin: 6px 0 8px;
+  text-align: right;
+}
+.canonical-book-group {
+  background: var(--surface-2);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  margin: 10px 0;
+}
+.canonical-book-group.other-group {
+  margin-top: 16px;
+}
+.canonical-book-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px 14px;
+  font: 600 13px var(--sans);
+  color: var(--ink);
+  user-select: none;
+}
+.canonical-book-header:hover {
+  background: var(--card);
+}
+.canonical-book-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.canonical-book-count {
+  font: 600 11px var(--sans);
+  color: var(--ink-faint);
+}
+.canonical-book-chapters {
+  padding: 0 14px 14px;
+}
+.canonical-chapter-group {
+  margin: 8px 0 0;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+}
+.canonical-chapter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+  font: 600 12px var(--sans);
+  color: var(--ink-soft);
+  user-select: none;
+}
+.canonical-chapter-header:hover {
+  background: var(--surface-2);
+}
+.canonical-chapter-count {
+  font: 600 10px var(--sans);
+  color: var(--ink-faint);
+}
+.canonical-chapter-verses {
+  padding: 0 12px 12px;
+}
+.canonical-verse-hits {
+  margin-top: 8px;
+}
+.canonical-verse-header {
+  font: 600 11px var(--sans);
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.canonical-other-hits {
+  padding: 14px;
+}
+
+/* ── Settings workspace (BX.5) ─────────────────────────────────── */
+.settings-workspace {
+  font-family: var(--serif);
+}
+.settings-workspace h2 {
+  font-family: var(--serif);
+  font-size: 24px;
+  margin: 0 0 16px;
+  color: var(--accent);
+}
+.settings-workspace h3 {
+  font-family: var(--serif);
+  font-size: 18px;
+  margin: 20px 0 8px;
+  color: var(--ink);
+}
+.settings-workspace .settings-section {
+  margin: 0 0 24px;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+}
+.settings-workspace .settings-desc {
+  font-family: var(--serif);
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.settings-workspace .settings-controls {
+  display: flex;
+  justify-content: flex-start;
+}
+.settings-workspace .theme-picker {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  color: var(--ink);
+}
+.settings-workspace .theme-picker select,
+.settings-workspace .theme-picker button {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--card-border);
+  color-scheme: var(--scheme);
+}
+html[data-mode='dark'] .settings-workspace .theme-picker select,
+html[data-mode='dark'] .settings-workspace .theme-picker button {
+  background: var(--card);
+}
+.settings-workspace .theme-preview {
+  margin-top: 12px;
+  padding: 14px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  font-family: var(--serif);
+}
+.settings-workspace .preview-line {
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+.settings-workspace .preview-line:last-child {
+  margin-bottom: 0;
+}
+.settings-workspace .preview-la {
+  display: block;
+  font-family: var(--serif);
+  color: var(--ink);
+}
+.settings-workspace .preview-en {
+  display: block;
+  margin-left: 1.2em;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  font-size: 0.95em;
+}
+.settings-workspace .preview-rubric .preview-la {
+  color: var(--rubric);
+  font-style: italic;
+}
+.settings-workspace .preview-dialogue-p .preview-la {
+  color: var(--dialogue-p);
+  font-weight: 600;
+}
+.settings-workspace .preview-dialogue-s .preview-la {
+  color: var(--dialogue-s);
+  font-weight: 600;
+}
+
+/* ── About workspace (BX.5) ───────────────────────────────────── */
+.about-workspace {
+  font-family: var(--serif);
+}
+.about-workspace h2 {
+  font-family: var(--serif);
+  font-size: 26px;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+.about-workspace .tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink-soft);
+  margin: 0 0 24px;
+  font-size: 16px;
+}
+.about-workspace .about-section {
+  margin: 0 0 28px;
+}
+.about-workspace h3 {
+  font-family: var(--serif);
+  font-size: 20px;
+  margin: 0 0 12px;
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 6px;
+}
+.about-workspace .about-prose {
+  font-family: var(--serif);
+  line-height: 1.65;
+  color: var(--ink);
+  margin: 0 0 16px;
+}
+.about-workspace .about-prose p {
+  margin: 0 0 14px;
+}
+.about-workspace .about-prose p:last-child {
+  margin-bottom: 0;
+}
+.about-workspace .about-prose ul {
+  margin: 0 0 14px;
+  padding-left: 1.35em;
+}
+.about-workspace .about-prose li {
+  margin: 0 0 6px;
+}
+.about-workspace .about-prose li.about-bullet-sub {
+  margin-left: 1.2em;
+  list-style-type: circle;
+  color: var(--ink-soft);
+}
+.about-workspace .about-prose strong {
+  font-weight: 600;
+}
+.about-workspace .about-meta {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 6px 14px;
+  margin: 0 0 16px;
+  font-family: var(--serif);
+}
+.about-workspace .about-meta dt {
+  font-weight: 700;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  align-self: baseline;
+}
+.about-workspace .about-meta dd {
+  margin: 0;
+  color: var(--ink);
+}
+.about-workspace .about-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 16px;
+}
+.about-workspace .about-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-family: var(--serif);
+}
+.about-workspace .about-links a:hover {
+  text-decoration: underline dotted;
+}
+.about-workspace .about-copyright {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--card-border);
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-family: var(--sans);
+}
+
+/* ── Typography for narrative/editor/calendar prose (BX.5) ────── */
+/* Journal and Homily Writer inherit serif from body; buttons/labels/metadata use sans */
+.content.settings-workspace,
+.content.about-workspace,
+.content.journal-workspace,
+.content.homily-workspace {
+  font-family: var(--serif);
+}
+.content.settings-workspace button,
+.content.settings-workspace select,
+.content.about-workspace button,
+.content.about-workspace a,
+.content.journal-workspace button,
+.content.journal-workspace input,
+.content.homily-workspace button {
+  font-family: var(--sans);
+}
+
+/* ── TrayPanel — slide-out presentation tray (Y-3/Y-4/Y-6/Y-7) ── */
+.tray-handle {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%);
+  z-index: 45; background: var(--surface-2); border: 1px solid var(--card-border);
+  border-right: none; border-radius: 8px 0 0 8px;
+  width: 32px; height: 56px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: -2px 2px 8px var(--shadow-color); transition: right 0.2s ease;
+  font-family: var(--sans); color: var(--ink-soft);
+}
+.tray-handle:hover { background: var(--surface); color: var(--ink); }
+.tray-handle.open { right: 280px; }
+.tray-handle-icon { font-size: 18px; }
+
+.tray-panel {
+  position: fixed; right: 0; top: 0; bottom: 0; width: 280px;
+  z-index: 44; background: var(--surface); border-left: 1px solid var(--card-border);
+  box-shadow: -4px 0 24px var(--shadow-color);
+  overflow-y: auto; padding: 16px 18px;
+  font-family: var(--sans); font-size: 13px; color: var(--ink);
+  animation: tray-slide-in 0.2s ease-out;
+}
+@keyframes tray-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .tray-panel { animation: none; } }
+
+.tray-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--card-border);
+}
+.tray-header h3 { font-family: var(--serif); font-size: 17px; margin: 0; }
+.tray-close {
+  background: none; border: none; font-size: 22px; cursor: pointer;
+  color: var(--ink-soft); padding: 0 4px; line-height: 1;
+}
+.tray-close:hover { color: var(--ink); }
+
+.tray-section { margin-bottom: 18px; }
+.tray-section h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); margin: 0 0 8px; }
+.tray-hint { font-size: 11px; color: var(--ink-faint); margin: 0 0 8px; }
+
+.tray-radio-group { display: flex; flex-direction: column; gap: 4px; }
+.tray-radio {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 12.5px; transition: background 0.15s;
+}
+.tray-radio:hover { background: var(--surface-2); }
+.tray-radio.active { background: var(--surface-2); font-weight: 600; }
+.tray-radio input { margin: 0; accent-color: var(--accent); }
+
+.tray-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12.5px; }
+.tray-toggle input { accent-color: var(--accent); }
+
+.tray-size-group { display: flex; gap: 8px; align-items: baseline; }
+.tray-size-btn {
+  width: 32px; height: 32px; border: 1px solid var(--card-border);
+  border-radius: 6px; background: var(--surface-2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); color: var(--ink); transition: border-color 0.15s;
+}
+.tray-size-btn:hover { border-color: var(--accent); }
+.tray-size-btn.active { border-color: var(--accent); border-width: 2px; }
+
+/* Reader/Office font variables */
+.reader, .office-reader {
+  font-size: var(--reader-font-size, 16px);
+  font-family: var(--reader-font-family, var(--serif));
+}
+
+/* Rubrics toggle — hide rubric-text lines when data-rubrics="off" */
+.reader[data-rubrics="off"] .rubric-text,
+.office-reader[data-rubrics="off"] .rubric-text {
+  display: none;
+}
+
+/* Role lens — highlight the active role's parts (never hide others) */
+.reader[data-role-lens="celebrans"] .dialogue-p,
+.office-reader[data-role-lens="celebrans"] .dialogue-p {
+  background: var(--lens-a);
+  border-radius: 3px;
+}
+.reader[data-role-lens="diaconus"] .dialogue-s,
+.office-reader[data-role-lens="diaconus"] .dialogue-s {
+  background: var(--lens-b);
+  border-radius: 3px;
+}
+
+/* ── Export bar (X-1/X-2/X-3) ─────────────────────────────────── */
+.export-bar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 0 12px; border-bottom: 1px solid var(--card-border);
+  margin-bottom: 12px;
+}
+.export-label { font-size: 12px; color: var(--ink-soft); font-family: var(--sans); }
+.export-bar button { padding: 4px 12px; } /* layout only — skin is the global button rule */
+.export-sep { width: 1px; height: 20px; background: var(--card-border); margin: 0 4px; }
+
+
+/* ── Reader unification (ARCHITECTURE.md §11, decision 23) ─────────── */
+
+/* Chaptered containers: alternating chapter boxes shade alternately so
+   consecutive chapters stay visually distinct — in the ScriptureMap stack
+   and in chapter→chapter navigation of the single-chapter reader. */
+.reader-section.chapter-lite,
+.reader-section.chapter-shade {
+  border-radius: 10px;
+  padding: 2px 14px 12px;
+  margin-left: -14px;
+  margin-right: -14px;
+}
+.reader-section.chapter-lite { background: var(--surface); }
+.reader-section.chapter-shade { background: var(--surface-2); }
+
+/* Per-chapter verse dropdown (ScriptureMap meta slot). */
+select.verse-jump {
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 0 4px;
+  margin-left: 8px;
+}
+
+/* The scripture strip: canonical books across (MapStrip scripture variant). */
+.mapstrip.scripture { position: relative; }
+.mapstrip .mstation.book .mlabel { font-style: italic; }
+/* The chapters band pins fixed under the strip (coords from MapStrip): the
+   strip scrolls horizontally, and overflow-y: hidden would otherwise clip
+   an absolutely-positioned band out of sight. Same escape as MapFlyout. */
+.mapstrip .book-chapters {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 10px 24px var(--shadow-color);
+  max-height: 34vh;
+  overflow: auto;
+}
+.mapstrip .book-chapters button {
+  min-width: 30px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.mapstrip .book-chapters button:hover { background: var(--surface-2); }
+
+/* The office's part-stations (OfficeHourMap) in the office rail. */
+.hour-parts {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: relative;
+}
+.hour-parts::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--line-office, var(--card-border));
+}
+.hour-parts button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  text-align: left;
+}
+.hour-parts button:hover { background: var(--surface-2); color: var(--ink); }
+.hour-parts button.active { color: var(--ink); font-weight: 600; }
+.hour-parts .hp-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--line-office, var(--card-border));
+  z-index: 1;
+}
+.hour-parts button.active .hp-dot { border-color: var(--accent); background: var(--accent); }
+
+/* Verse zebra (reader unification, operator refinement 2026-08-16): in the
+   interleaved layout Latin-English PAIRS alternate dark/light; in the
+   side-by-side layout VERSES alternate across both language columns. The
+   echo highlight always wins over the zebra shade. */
+:root { --zebra-line: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+.il-pair.v-odd { background: var(--zebra-line); border-radius: 8px; padding: 3px 8px; margin: 0 -8px; }
+.bilingual .latin p span.v-odd,
+.bilingual .english p span.v-odd { background: var(--zebra-line); border-radius: 4px; }
+.bilingual .latin p span.v-odd.xlate-echo,
+.bilingual .english p span.v-odd.xlate-echo,
+.il-pair.v-odd .xlate-echo { background: transparent; }
+
+/* Scripture atlas mode switch — themed segmented control (operator 2026-08-16:
+   "skinned matching the theme, not 1995"): quiet vellum pill, active segment
+   lifts onto the parchment surface with the accent underline. */
+.atlas-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 16px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+}
+.atlas-mode-switch button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--serif);
+  font-size: 12.5px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  padding: 5px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.atlas-mode-switch button:hover { color: var(--ink); }
+.atlas-mode-switch button.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 4px var(--shadow-color), inset 0 -2px 0 var(--accent);
+}
+
+/* ── Global button skin (operator directive 2026-08-16): one skin, every
+   button. Unclassed buttons ("New note" rendered as a browser default) and
+   every segmented control take this automatically; surfaces with their own
+   intentional rules (rail, map stations, context menu, …) keep them by
+   specificity. Active state follows the app's existing segmented idiom
+   (accent fill — atlas-toolbar, jsc-dest). */
+button {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+button:hover { color: var(--ink); border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+
+/* Primary action variant — the single accent-filled CTA in a button row
+   ("Save draft" in the journal editor). Hover brightens in place instead of
+   re-coloring, so it reads as one step beyond the plain pills. */
+button.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+button.primary:hover { color: var(--on-accent); filter: brightness(1.1); }
+
+/* Map stations are their own surface (M2 idiom): the global button skin's
+   accent fill on `button.active` was painting a loud pill behind active
+   strip stops, masking the subtle ping (operator report 2026-08-17). These
+   overrides sit after the global skin so equal specificity loses to them. */
+button.mstation, button.mstation.active, button.mstation.open {
+  background: none; border: 0; border-radius: 0;
+}
+
+/* The atlas mode switch now consumes the global skin — grouping only. */
+.atlas-mode-switch { display: inline-flex; gap: 4px; margin: 0 0 16px; padding: 0; background: none; border: none; border-radius: 0; }
+.atlas-mode-switch button { padding: 5px 16px; }
+.atlas-mode-switch button.active { box-shadow: none; }
+
+/* ── Share landing (operator directive 2026-08-16): a shared passage opens
+   a standalone souvenir-plaque page — the excerpt in large stylized letters,
+   an engraved panel, an invitation, and the app/store badges. */
+.share-landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 48px 20px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface) 30%, var(--surface-2));
+  text-align: center;
+}
+.share-rose { font-size: 30px; color: var(--accent); }
+.share-plaque {
+  max-width: 720px;
+  margin: 0;
+  padding: 44px 48px 30px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  outline: 4px double var(--card-border);
+  outline-offset: 6px;
+  border-radius: 4px;
+  box-shadow: 0 14px 40px var(--shadow-color), inset 0 1px 0 color-mix(in srgb, var(--card) 70%, white);
+}
+.share-plaque blockquote {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(26px, 4.6vw, 40px);
+  line-height: 1.35;
+  color: var(--ink);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--surface) 65%, white), 0 -1px 1px var(--shadow-color);
+  letter-spacing: 0.01em;
+}
+.share-plaque blockquote.alt {
+  margin-top: 14px;
+  font-size: clamp(17px, 2.6vw, 22px);
+  color: var(--ink-soft);
+  text-shadow: none;
+}
+.share-plaque figcaption {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--serif);
+  font-variant: small-caps;
+  letter-spacing: 0.09em;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+.plaque-source { color: var(--ink-faint); font-size: 12px; }
+.share-lead {
+  max-width: 560px;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 16.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.share-cta { font-size: 16px; padding: 10px 28px; }
+.store-badges { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.store-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  border: none;
+}
+.store-badge.play { background: var(--badge-play); box-shadow: 0 2px 8px var(--shadow-strong); }
+.store-badge.ms { background: var(--badge-ms); box-shadow: 0 2px 8px var(--shadow-strong); }
+.store-badge.pending { opacity: 0.55; cursor: default; }
+.share-foot { font-family: var(--serif); font-variant: small-caps; letter-spacing: 0.12em; color: var(--ink-faint); font-size: 12px; }
+
+/* A rubric is its own line, always (operator directive 2026-08-16): the red
+   stage direction never runs into the spoken text — a full break before and
+   breathing room after, in either layout. */
+.rubric-text { display: block; margin: 10px 0 4px; }
+
+/* ── Annotations ─────────────────────────────────────────────────── */
+
+/* The end-of-reading annotation list is TITLED (operator directive
+   2026-08-16): a small-caps ANNOTATIONS heading so the entries read as a
+   named appendix to the section, not anonymous boxes. */
+.ann-heading {
+  font: 700 10.5px var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 10px 0 2px;
+}
+
+/* AnnotationIndex cards: one accent per annotation color — the swatch and
+   the left rail carry the color, the card itself stays parchment. */
+.annx-card {
+  position: relative;
+  background: var(--surface-2);
+  border-left: 3px solid var(--ann-accent, var(--gold));
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+  margin: 4px 0 10px;
+  font: 14px var(--sans);
+}
+.annx-swatch {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--ann-accent, var(--gold));
+  margin-right: 6px;
+  vertical-align: baseline;
+}
+.annx-card.c-gold { --ann-accent: var(--ann-accent-gold); }
+.annx-card.c-rose { --ann-accent: var(--ann-accent-rose); }
+.annx-card.c-sky  { --ann-accent: var(--ann-accent-sky); }
+.annx-card.c-moss { --ann-accent: var(--ann-accent-moss); }
+.annx-quote { font-family: var(--serif); font-style: italic; color: var(--ink-soft); }
+.annx-note { margin-top: 4px; white-space: pre-wrap; }
+.annx-meta { margin-top: 6px; font-size: 12px; }
+
+/* Selection model (operator direction 2026-09-04): checkbox column + bulk
+   actions bar + right-click context menu — replaces per-card button rows. */
+.annx-card { display: grid; grid-template-columns: auto 1fr; gap: 0 9px; align-items: start; cursor: context-menu; }
+.annx-card.annx-selected { background: var(--accent-soft); }
+.annx-check { padding-top: 3px; line-height: 0; }
+.annx-check input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+.annx-select-bar {
+  position: sticky; top: 8px; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  background: var(--surface-2); border: 1px solid var(--accent); border-radius: 10px;
+  padding: 7px 12px; margin: 8px 0; font: 13px var(--sans);
+  box-shadow: 0 6px 18px #0002;
+}
+.annx-menu-scrim { position: fixed; inset: 0; z-index: 49; }
+.annx-menu { position: fixed; min-width: 180px; }
+.annx-edit textarea {
+  width: 100%;
+  font: 14px var(--serif);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-top: 6px;
+}

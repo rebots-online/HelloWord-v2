@@ -1,0 +1,168 @@
+/*
+ * richtext-theme.css — maps CKEditor 5 chrome onto the app's semantic tokens
+ * (styles.css §7.7). Imported immediately after ckeditor5/ckeditor5.css so the
+ * :root overrides below win the cascade. Because every value is an indirect
+ * var() into --surface/--card/--accent/..., the editor automatically follows
+ * all theme families × light/dark × seasonal accents.
+ */
+
+:root {
+  /* Content typography = the reader's serif conventions. */
+  --ck-content-font-family: var(--serif);
+  --ck-content-font-size: 16px;
+  --ck-content-font-color: var(--ink);
+  --ck-content-line-height: 1.55;
+
+  /* Chrome = the app's sans UI skin. */
+  --ck-font-face: var(--sans);
+  --ck-border-radius: 8px;
+
+  --ck-color-base-background: var(--card);
+  --ck-color-base-border: var(--card-border);
+  --ck-color-base-text: var(--ink);
+  --ck-color-base-foreground: var(--surface-2);
+  --ck-color-base-action: var(--accent);
+  --ck-color-base-focus: var(--accent);
+  --ck-color-base-error: var(--rubric);
+  --ck-color-text: var(--ink);
+
+  --ck-color-focus-border: var(--accent);
+  --ck-color-focus-outer-shadow: var(--accent-soft);
+
+  --ck-color-toolbar-background: var(--surface-2);
+  --ck-color-toolbar-border: var(--card-border);
+  --ck-color-panel-background: var(--surface-2);
+  --ck-color-panel-border: var(--card-border);
+  --ck-color-dropdown-panel-background: var(--surface-2);
+  --ck-color-dropdown-panel-border: var(--card-border);
+
+  --ck-color-button-default-background: transparent;
+  --ck-color-button-default-hover-background: var(--accent-soft);
+  --ck-color-button-default-active-background: var(--accent-soft);
+  --ck-color-button-on-background: var(--accent);
+  --ck-color-button-on-color: var(--on-accent);
+  --ck-color-button-on-hover-background: var(--accent);
+  --ck-color-button-on-active-background: var(--accent);
+
+  --ck-color-list-background: var(--surface-2);
+  --ck-color-list-button-hover-background: var(--accent-soft);
+  --ck-color-list-button-on-background: var(--accent);
+  --ck-color-list-button-on-text: var(--on-accent);
+
+  --ck-color-input-background: var(--card);
+  --ck-color-input-border: var(--card-border);
+  --ck-color-input-text: var(--ink);
+  --ck-color-tooltip-background: var(--rail);
+  --ck-color-tooltip-text: var(--rail-text);
+
+  --ck-color-widget-blurred-border: var(--card-border);
+  --ck-color-widget-hover-border: var(--accent);
+  --ck-color-shadow-drop: var(--card-shadow, rgba(0, 0, 0, 0.18));
+  --ck-color-shadow-inner: transparent;
+
+  /*
+   * CKEditor hardcodes stock colors for a few chrome semantics (green save,
+   * red cancel, blue links, yellow highlight — see their defaults file).
+   * Everything below maps those onto the token contract so no CK surface
+   * escapes the theme.
+   */
+  --ck-color-button-save: var(--accent);
+  --ck-color-button-cancel: var(--rubric);
+  --ck-color-button-action-text: var(--on-accent);
+  --ck-color-base-active: var(--accent);
+  --ck-color-base-active-focus: var(--accent);
+  --ck-color-link-default: var(--accent);
+  --ck-color-link-selected-background: var(--accent-soft);
+  --ck-color-link-fake-selection: var(--accent-soft);
+  --ck-color-highlight-background: var(--marker-yellow);
+  --ck-color-dialog-background: var(--card);
+  --ck-color-dialog-form-header-border: var(--card-border);
+  --ck-color-code-block-label-background: var(--surface-2);
+  --ck-color-upload-bar-background: var(--surface-2);
+  --ck-color-labeled-field-label-background: var(--card);
+  --ck-color-input-disabled-background: var(--surface-2);
+  --ck-color-input-disabled-border: var(--card-border);
+  --ck-color-input-disabled-text: var(--ink-faint);
+  --ck-color-engine-placeholder-text: var(--ink-faint);
+  --ck-color-block-toolbar-button: var(--ink-soft);
+  --ck-color-list-button-on-background-focus: var(--accent);
+  --ck-color-widget-drag-handler-icon-color: var(--ink-soft);
+}
+
+/* Pill toolbar buttons — the app's global button skin. */
+.ck.ck-button,
+a.ck.ck-button {
+  border-radius: 999px;
+}
+
+/* Toolbar/menu-bar text inherits the chrome font (CKEditor sets its own). */
+.ck.ck-toolbar,
+.ck.ck-menubar {
+  font-family: var(--sans);
+}
+
+/*
+ * Highlight colors — retint CKEditor's default markers as liturgical tints
+ * (token values vary per family × mode, DOCS/THEMES.md) so
+ * `<mark class="marker-*">` (incl. normalized TipTap bare <mark>) reads like
+ * the rest of the surface.
+ */
+.ck-content .marker-yellow { background-color: var(--marker-yellow); }
+.ck-content .marker-green  { background-color: var(--marker-green); }
+.ck-content .marker-pink   { background-color: var(--marker-pink); }
+.ck-content .marker-blue   { background-color: var(--marker-blue); }
+
+/* Content conventions shared with the reader. */
+.ck-content blockquote {
+  border-left: 3px solid var(--accent);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.ck-content a { color: var(--accent); }
+.ck-content hr {
+  border: none;
+  border-top: 1px solid var(--card-border);
+  margin: 1em 0;
+}
+
+/* Editor sizing inside app surfaces (replaces the old .jsc-editor box). */
+.jsc-editor-wrap .ck.ck-editor__editable {
+  min-height: 180px;
+}
+.annx-edit .ck.ck-editor__editable {
+  min-height: 72px;
+}
+/* .annx-note is pre-wrap for legacy plain text; HTML notes flow normally. */
+.annx-note.ck-content {
+  white-space: normal;
+}
+
+/*
+ * Reader margin-note callouts — rendered IN FLOW just below the line
+ * carrying the highlight (never overlays surrounding text), tied to it by
+ * the .ann-ref ✎ mark. Lives here so .ck-content note HTML is styled in the
+ * same cascade as the editor.
+ */
+.ann-callout {
+  display: block;
+  margin: 8px 0 10px 2.2em;
+  max-width: 52ch;
+  padding: 7px 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--card-border);
+  border-left: 3px solid var(--ann-accent, var(--gold));
+  border-radius: 0 8px 8px 0;
+  font: 13.5px var(--sans);
+  color: var(--ink-soft);
+}
+.ann-callout.c-gold { --ann-accent: var(--ann-accent-gold); }
+.ann-callout.c-rose { --ann-accent: var(--ann-accent-rose); }
+.ann-callout.c-sky  { --ann-accent: var(--ann-accent-sky); }
+.ann-callout.c-moss { --ann-accent: var(--ann-accent-moss); }
+.ann-ref {
+  margin-left: 3px;
+  font-size: 10.5px;
+  color: var(--accent);
+  cursor: default;
+  user-select: none;
+}
