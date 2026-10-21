@@ -1,9 +1,9 @@
 {
-  "version": "2.5.76016",
-  "versionBase": "2.5",
-  "buildNumber": "76016",
-  "versionCode": 200005,
-  "buildDate": "2026-10-21T05:36:45.649Z",
+  "version": "2.6.76028",
+  "versionBase": "2.6",
+  "buildNumber": "76028",
+  "versionCode": 200006,
+  "buildDate": "2026-10-21T05:48:46.178Z",
   "productName": "Hello, Word — Sanctissimissa",
   "internalName": "helloword",
   "packageName": "mba.robin.helloword"

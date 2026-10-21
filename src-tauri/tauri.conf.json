@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Hello, Word — Sanctissimissa",
-  "version": "2.5.76016",
+  "version": "2.6.76028",
   "identifier": "mba.robin.helloword",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -63,7 +63,7 @@
       }
     },
     "android": {
-      "versionCode": 200005,
+      "versionCode": 200006,
       "autoIncrementVersionCode": false
     }
   },
