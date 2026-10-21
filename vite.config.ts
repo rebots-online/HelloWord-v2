@@ -65,12 +65,12 @@ export default defineConfig({
   },
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
-    // Web output lives in a clean, disposable `dist-web/` (gitignored via the
+    // Web output lives in a clean, disposable `dist/web/` (gitignored via the
     // `dist-*/` rule) so Tauri's `frontendDist` embeds ONLY the web surface and
     // Vite's outDir-emptying never touches release artifacts.  `dist/` is the
-    // durable, versioned, append-only archive (I-0/CC12); `dist-web/` is
+    // durable, versioned, append-only archive (I-0/CC12); `dist/web/` is
     // cleared each build.
-    outDir: 'dist-web',
+    outDir: 'dist/web',
     emptyOutDir: true,
     target: 'es2022',
     sourcemap: false,

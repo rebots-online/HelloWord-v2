@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+APP_SLUG="$(node "$(dirname "${BASH_SOURCE[0]}")/app-identity.mjs" slug)"
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -15,4 +16,4 @@ test "$(tr -d '\r\n' < version.txt)" = "$VERSION"
   --no-bundle \
   --ci
 
-test -f src-tauri/target/x86_64-pc-windows-msvc/release/st-androids-missal.exe
+test -f dist/target/x86_64-pc-windows-msvc/release/${APP_SLUG}.exe

@@ -4,7 +4,7 @@
 // request 2026-09-18; signoff DOCS/ARCHITECTURE-SIGNOFF.md 2026-09-18).
 //
 // Contract (REL.1): publish only already-built output — no rebuild, no stamp.
-// Requires dist-web/index.html; prepares the SPA fallback 200.html; invokes
+// Requires dist/web/index.html; prepares the SPA fallback 200.html; invokes
 // the pinned project-local Surge CLI with explicit --project/--domain.
 // Credentials come from the host's Surge login or environment and are never
 // read, stored or echoed here. Every failure exits nonzero so the release
@@ -19,7 +19,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // Hermetic tests redirect the release root the same way release-state.mjs does.
 const root = process.env.RELEASE_ROOT ? resolve(process.env.RELEASE_ROOT) : ROOT;
 
-const DIST = resolve(root, 'dist-web');
+const DIST = resolve(root, 'dist/web');
 const DOMAIN = 'sanctissimissa.surge.sh';
 const INDEX = resolve(DIST, 'index.html');
 const FALLBACK = resolve(DIST, '200.html');

@@ -16,6 +16,9 @@ if [ -z "${JAVA_HOME:-}" ]; then
 fi
 
 TAURI=./node_modules/.bin/tauri
+# Every build system writes ONLY under dist/ (gitignored): cargo -> dist/target,
+# vite -> dist/web, gradle -> dist/android. Deliverables are collected to dist/.
+export CARGO_TARGET_DIR="$ROOT/dist/target"
 APP_SLUG="$(node scripts/app-identity.mjs slug)"
 APP_PRODUCT_NAME="$(node scripts/app-identity.mjs product)"
 
@@ -36,7 +39,7 @@ npm run build:vite
 "$TAURI" build --bundles deb,appimage --ci
 
 # Windows cross-compile: standalone PE + NSIS installer (MSI/MSIX deferred to a Windows host)
-NSIS_PROJ="src-tauri/target/x86_64-pc-windows-msvc/release/nsis/x64"
+NSIS_PROJ="dist/target/x86_64-pc-windows-msvc/release/nsis/x64"
 if ! "$TAURI" build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundles nsis --ci; then
   # Upstream tauri-bundler defect: the apostrophe in the product name breaks
   # the single-quoted COM parameter strings in the generated utils.nsh
@@ -44,12 +47,12 @@ if ! "$TAURI" build --runner cargo-xwin --target x86_64-pc-windows-msvc --bundle
   # interface calls with backticks and run makensis (>= 3.11) directly.
   sed -i '/${I[A-Za-z]*::/ s/'"'"'/`/g' "$NSIS_PROJ/utils.nsh"
   (cd "$NSIS_PROJ" && makensis -INPUTCHARSET UTF8 installer.nsi)
-  mkdir -p src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis
+  mkdir -p dist/target/x86_64-pc-windows-msvc/release/bundle/nsis
   mv "$NSIS_PROJ/nsis-output.exe" \
-    "src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/${APP_PRODUCT_NAME}_${VERSION}_x64-setup.exe"
+    "dist/target/x86_64-pc-windows-msvc/release/bundle/nsis/${APP_PRODUCT_NAME}_${VERSION}_x64-setup.exe"
 fi
-test -f src-tauri/target/x86_64-pc-windows-msvc/release/${APP_SLUG}.exe
-ls src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*_x64-setup.exe >/dev/null
+test -f dist/target/x86_64-pc-windows-msvc/release/${APP_SLUG}.exe
+ls dist/target/x86_64-pc-windows-msvc/release/bundle/nsis/*_x64-setup.exe >/dev/null
 
 # Android: debug APK, then release APK + AAB with native symbols preserved
 "$TAURI" android build --debug --apk --ci

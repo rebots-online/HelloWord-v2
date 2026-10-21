@@ -14,7 +14,7 @@ set -euo pipefail
 APP_SLUG="$(node "$(dirname "${BASH_SOURCE[0]}")/app-identity.mjs" slug)"
 
 VERSION=$(node -p "JSON.parse(require('fs').readFileSync('version.json','utf8')).version")
-EXE="src-tauri/target/x86_64-pc-windows-msvc/release/st-androids-missal.exe"
+EXE="dist/target/x86_64-pc-windows-msvc/release/${APP_SLUG}.exe"
 
 echo "=== Building web frontend ==="
 npm run build:vite
@@ -34,7 +34,7 @@ echo "=== Staging for MSIX ==="
 rm -rf msix-stage
 mkdir -p msix-stage/Assets
 cp "$EXE" msix-stage/
-cp -r dist-web msix-stage/dist-web
+cp -r dist/web msix-stage/dist-web
 
 # The manifest names Assets\*.png. Staging never copied them, so every package
 # built to date referenced logos that were not inside it — which is a package

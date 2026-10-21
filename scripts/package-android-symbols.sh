@@ -6,8 +6,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 VERSION="$(node -p "JSON.parse(require('fs').readFileSync('version.json','utf8')).version")"
-SOURCE="src-tauri/gen/android/app/build/intermediates/merged_native_libs/universalRelease/mergeUniversalReleaseNativeLibs/out/lib"
-OUTPUT_DIR="src-tauri/gen/android/app/build/outputs/native-debug-symbols/universalRelease"
+SOURCE="dist/android/app/intermediates/merged_native_libs/universalRelease/mergeUniversalReleaseNativeLibs/out/lib"
+OUTPUT_DIR="dist/android/app/outputs/native-debug-symbols/universalRelease"
 OUTPUT="$ROOT/$OUTPUT_DIR/${APP_SLUG}-v${VERSION}-android-native-debug-symbols.zip"
 
 abis=(arm64-v8a armeabi-v7a x86 x86_64)

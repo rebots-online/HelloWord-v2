@@ -14,8 +14,11 @@ allprojects {
         google()
         mavenCentral()
     }
+    // All Gradle output lives under the repo's dist/android/ (gitignored),
+    // never beside the sources.
+    layout.buildDirectory.set(file("${rootDir}/../../../dist/android/${project.name}"))
 }
 
 tasks.register("clean").configure {
-    delete("build")
+    delete(layout.buildDirectory)
 }
