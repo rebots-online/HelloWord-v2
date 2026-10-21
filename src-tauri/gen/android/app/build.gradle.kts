@@ -13,8 +13,22 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// Signing credentials live ONLY in Admin-Manual (public repo). The gitignored
+// root .env carries the pointer SAM_KEYSTORE_PROPERTIES; read it in place —
+// never copy the properties file into this tree.
+fun keystorePointer(): String? {
+    System.getenv("SAM_KEYSTORE_PROPERTIES")?.takeIf { it.isNotBlank() }?.let { return it }
+    val envFile = file("../../../../.env")
+    if (!envFile.exists()) return null
+    return envFile.readLines()
+        .map { it.trim() }
+        .firstOrNull { it.startsWith("SAM_KEYSTORE_PROPERTIES=") }
+        ?.substringAfter("=")?.trim()?.trim('"', '\'')
+}
+
 val keystoreProperties = Properties().apply {
-    val propFile = file("../keystore.properties")
+    val pointer = keystorePointer()?.replaceFirst(Regex("^~"), System.getProperty("user.home"))
+    val propFile = if (pointer != null) file(pointer) else file("../keystore.properties")
     if (propFile.exists()) {
         propFile.inputStream().use { load(it) }
     }
