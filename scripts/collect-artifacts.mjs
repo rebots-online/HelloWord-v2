@@ -349,7 +349,7 @@ if (!changeNotes.present) {
 const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' }).trim();
 const manifest = {
   schema: 'mba.robin.release-manifest.v1',
-  project: "St. Android's Missal",
+  project: appIdentity().product,
   slug: SLUG,
   version: VERSION,
   versionCode: versionJson.versionCode,
@@ -382,7 +382,7 @@ const xmlChangeNotes =
 writeFileSync(join(DIST, `release-manifest-v${VERSION}.xml`),
   `<?xml version="1.0" encoding="UTF-8"?>\n<release schema="mba.robin.release-manifest.v1" version="${xmlEscape(VERSION)}" versionCode="${VERSION_CODE}">\n${xmlChangeNotes}\n${xmlArtifacts}\n</release>\n`);
 writeFileSync(join(DIST, `RELEASE_NOTES-v${VERSION}.md`),
-  `# St. Android's Missal v${VERSION}\n\n${changeNotes.markdown}\n\n---\n\n` +
+  `# ${appIdentity().product} v${VERSION}\n\n${changeNotes.markdown}\n\n---\n\n` +
   `Built from commit ${sourceCommit}. See the adjacent release manifest for exact ` +
   `artifact hashes and verification state.\n`);
 
