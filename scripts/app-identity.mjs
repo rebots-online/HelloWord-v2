@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * app-identity — the ONE source of the app's identity: APP_ID, APP_SLUG,
  * APP_PRODUCT_NAME, APP_ANDROID_APP_NAME and APP_ANDROID_ACTIVITY_TITLE from the root .env (process env overrides). Every build
