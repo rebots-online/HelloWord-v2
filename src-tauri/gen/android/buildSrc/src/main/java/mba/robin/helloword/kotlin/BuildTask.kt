@@ -8,7 +8,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
 import javax.inject.Inject
 
-open class BuildTask : DefaultTask() {
+abstract class BuildTask : DefaultTask() {
     // Gradle 9 removed Project.exec — ExecOperations is the injected replacement.
     @get:Inject
     protected abstract val execOperations: ExecOperations
